@@ -13,7 +13,6 @@ export interface Stats {
 
 export type TimeType = 'to-goal' | 'to-time';
 export type TaskQuality = 'A' | 'B' | 'C' | 'D';
-export type Area = 'Noesis' | 'Grace' | 'Rete' | 'Panoptic';
 export type TimeQuality = 'pure' | 'not-pure';
 
 export interface ColumnItem extends AddItemFormData {
@@ -37,6 +36,5 @@ export interface AddItemFormData {
   timeType: TimeType;
   taskQuality: TaskQuality;
   estimatedMinutes: string | number;
-  area: Area;
   priority: number;
 } 

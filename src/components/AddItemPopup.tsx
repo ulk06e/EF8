@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TimeType, TaskQuality, Area, AddItemFormData } from '../types';
+import { TimeType, TaskQuality, AddItemFormData } from '../types';
 import '../styles/notion.css';
 
 interface AddItemPopupProps {
@@ -13,7 +13,6 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
     timeType: 'to-goal',
     taskQuality: 'A',
     estimatedMinutes: '',
-    area: 'Noesis',
     priority: 1,
   });
 
@@ -60,16 +59,6 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
               <option value="B">B</option>
               <option value="C">C</option>
               <option value="D">D</option>
-            </select>
-
-            <select
-              value={formData.area}
-              onChange={(e) => setFormData({ ...formData, area: e.target.value as Area })}
-            >
-              <option value="Noesis">Noesis</option>
-              <option value="Grace">Grace</option>
-              <option value="Rete">Rete</option>
-              <option value="Panoptic">Panoptic</option>
             </select>
           </div>
 
