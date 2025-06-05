@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { TimeType, TaskQuality, AddItemFormData } from '../types';
+import React, { useState, useEffect } from 'react';
+import { TimeType, TaskQuality, AddItemFormData, ColumnItem } from '../types';
 import '../styles/notion.css';
 
 interface AddItemPopupProps {
   onConfirm: (data: AddItemFormData) => void;
   onCancel: () => void;
+  initialData?: ColumnItem;
 }
 
-const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
+const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initialData }) => {
   const [formData, setFormData] = useState<AddItemFormData>({
     description: '',
     timeType: 'to-goal',
@@ -16,9 +17,20 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
     priority: 1,
   });
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        description: initialData.description,
+        timeType: initialData.timeType,
+        taskQuality: initialData.taskQuality,
+        estimatedMinutes: initialData.estimatedMinutes,
+        priority: initialData.priority,
+      });
+    }
+  }, [initialData]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted with data:', formData);
     onConfirm({
       ...formData,
       estimatedMinutes: parseInt(formData.estimatedMinutes as string) || 0
@@ -30,7 +42,7 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
       if (e.target === e.currentTarget) onCancel();
     }}>
       <div className="popup-content" onClick={e => e.stopPropagation()}>
-        <h2 className="popup-title">Create a Task</h2>
+        <h2 className="popup-title">{initialData ? 'Edit Task' : 'Create a Task'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <textarea
@@ -46,6 +58,7 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
             <select
               value={formData.timeType}
               onChange={(e) => setFormData({ ...formData, timeType: e.target.value as TimeType })}
+              className="full-width"
             >
               <option value="to-goal">To Goal</option>
               <option value="to-time">To Time</option>
@@ -54,6 +67,7 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
             <select
               value={formData.taskQuality}
               onChange={(e) => setFormData({ ...formData, taskQuality: e.target.value as TaskQuality })}
+              className="full-width"
             >
               <option value="A">A</option>
               <option value="B">B</option>
@@ -66,6 +80,7 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
             <select
               value={formData.priority}
               onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
+              className="full-width"
             >
               {[...Array(10)].map((_, i) => (
                 <option key={i + 1} value={i + 1}>#{i + 1}</option>
@@ -81,6 +96,7 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
                 setFormData({ ...formData, estimatedMinutes: value });
               }}
               required
+              className="full-width"
             />
           </div>
 
@@ -89,7 +105,7 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel }) => {
               Cancel
             </button>
             <button type="submit" className="confirm-button">
-              Create Task
+              {initialData ? 'Save Changes' : 'Create Task'}
             </button>
           </div>
         </form>

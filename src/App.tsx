@@ -7,11 +7,12 @@ import Timer from './components/Timer';
 import FailurePopup from './components/FailurePopup';
 import Menu from './components/Menu';
 import DailyReflectionPopup from './components/DailyReflectionPopup';
+import Statistics from './components/Statistics';
+import Goals from './components/Goals';
 import { Stats, Column as ColumnType, AddItemFormData, ColumnItem } from './types';
 import { calculateXP } from './utils/xp';
 import storage from './services/storage';
 import './styles/notion.css';
-import Statistics from './components/Statistics';
 
 function App() {
   const [stats, setStats] = useState<Stats>({
@@ -38,6 +39,7 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showReflection, setShowReflection] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showGoals, setShowGoals] = useState(false);
 
   // Subscribe to storage changes
   useEffect(() => {
@@ -197,10 +199,30 @@ function App() {
 
   const handleDailyPlanner = () => {
     setShowStatistics(false);
+    setShowGoals(false);
   };
 
   const handleStatistics = () => {
     setShowStatistics(true);
+    setShowGoals(false);
+  };
+
+  const handleSetGoals = () => {
+    setShowGoals(true);
+    setShowStatistics(false);
+  };
+
+  const handleItemEdit = (item: ColumnItem, formData: AddItemFormData) => {
+    if (item.columnOrigin !== 'plan') return;
+
+    const updatedItem = {
+      ...item,
+      ...formData,
+      estimatedMinutes: typeof formData.estimatedMinutes === 'string' 
+        ? parseInt(formData.estimatedMinutes) 
+        : formData.estimatedMinutes
+    };
+    storage.updatePlanItem(updatedItem);
   };
 
   const handleNewDay = () => {
@@ -230,7 +252,9 @@ function App() {
         </button>
         <Header stats={stats} />
       </div>
-      {showStatistics ? (
+      {showGoals ? (
+        <Goals stats={stats} />
+      ) : showStatistics ? (
         <Statistics 
           data={storage.getData()} 
           onClose={() => setShowStatistics(false)} 
@@ -244,6 +268,7 @@ function App() {
               onItemToggle={handleItemToggle}
               onAddClick={handleAddClick}
               onItemClick={handleItemClick}
+              onItemEdit={handleItemEdit}
               columnId="plan"
             />
             <Column 
@@ -282,6 +307,7 @@ function App() {
         onClearData={handleClearData}
         onStatistics={handleStatistics}
         onDailyPlanner={handleDailyPlanner}
+        onSetGoals={handleSetGoals}
       />
       {showReflection && (
         <DailyReflectionPopup

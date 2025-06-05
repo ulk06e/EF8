@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StorageData, DayData } from '../types/storage';
 import '../styles/notion.css';
 
@@ -7,7 +7,20 @@ interface StatisticsProps {
   onClose: () => void;
 }
 
+interface DayDetails {
+  date: Date;
+  xp: number;
+  minutes: number;
+  unaccountedMinutes: number;
+  planItems: any[];
+  factItems: any[];
+  reflection?: string;
+  hasData: boolean;
+}
+
 const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
+  const [selectedDay, setSelectedDay] = useState<DayDetails | null>(null);
+
   const calculateWeekXP = (days: DayData[], weeksAgo: number = 0): number => {
     const now = new Date();
     const startOfWeek = new Date(now);
@@ -85,37 +98,95 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
     return breakdown;
   };
 
-  const getLast30Days = () => {
+  const getLast7Days = (): DayDetails[] => {
     const now = new Date();
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 6); // -6 to include today
     
-    return data.days
-      .filter(day => new Date(day.date) >= thirtyDaysAgo)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const days: DayDetails[] = [];
+    for (let d = new Date(sevenDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
+      const dayData = data.days.find(day => 
+        new Date(day.date).toDateString() === d.toDateString()
+      );
+
+      // If it's today, use currentDay data
+      const isToday = d.toDateString() === now.toDateString();
+      const dayToUse = isToday ? data.currentDay : dayData;
+
+      const dayDetails: DayDetails = {
+        date: new Date(d),
+        xp: dayToUse?.stats.dayXP || 0,
+        minutes: dayToUse?.stats.dayMinutes || 0,
+        unaccountedMinutes: dayToUse ? calculateUnaccountedMinutes(dayToUse) : 0,
+        planItems: dayToUse?.planItems || [],
+        factItems: dayToUse?.factItems || [],
+        reflection: dayToUse?.reflection,
+        hasData: !!dayToUse
+      };
+      days.push(dayDetails);
+    }
+    
+    return days.reverse(); // Most recent first
   };
 
-  const getChartData = () => {
-    const last30Days = getLast30Days();
-    const xpData = last30Days.map(day => ({
-      date: new Date(day.date).toLocaleDateString(),
-      xp: day.stats.dayXP
-    }));
+  const calculateUnaccountedMinutes = (day: DayData): number => {
+    let total = 0;
+    const sortedItems = [...day.factItems].sort((a, b) => 
+      new Date(b.completedTime || 0).getTime() - new Date(a.completedTime || 0).getTime()
+    );
 
-    const timeData = last30Days.map(day => ({
-      date: new Date(day.date).toLocaleDateString(),
-      minutes: day.stats.dayMinutes
-    }));
+    sortedItems.forEach((item, index) => {
+      if (!item.completedTime) return;
 
-    return { xpData, timeData };
+      const currentTime = new Date(item.completedTime);
+      let previousTime: Date;
+
+      if (index === sortedItems.length - 1) {
+        previousTime = new Date(currentTime);
+        previousTime.setHours(4, 0, 0, 0);
+        if (previousTime > currentTime) {
+          previousTime.setDate(previousTime.getDate() - 1);
+        }
+      } else {
+        const nextItem = sortedItems[index + 1];
+        if (!nextItem.completedTime) return;
+        previousTime = new Date(nextItem.completedTime);
+      }
+
+      const diffMinutes = Math.floor((currentTime.getTime() - previousTime.getTime()) / (1000 * 60));
+      const accountedMinutes = item.actualDuration || 0;
+      const unaccountedMinutes = diffMinutes - accountedMinutes;
+
+      if (unaccountedMinutes > 0) {
+        total += unaccountedMinutes;
+      }
+    });
+
+    return total;
+  };
+
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const formatDateShort = (date: Date): string => {
+    return date.toLocaleDateString('en-US', { 
+      day: 'numeric',
+      month: 'short'
+    });
   };
 
   const thisWeekXP = calculateWeekXP(data.days);
   const lastWeekXP = calculateWeekXP(data.days, 1);
   const xpChange = lastWeekXP ? ((thisWeekXP - lastWeekXP) / lastWeekXP) * 100 : 0;
   const xpBreakdown = calculateXPBreakdown(data.days);
-  const chartData = getChartData();
-  const last30Days = getLast30Days();
+  const days = getLast7Days();
+  const maxXP = Math.max(...days.map(d => d.xp)) * 1.5 || 100;
+  const maxMinutes = Math.max(...days.map(d => d.minutes)) * 1.5 || 100;
 
   const firstTaskDate = data.days.length > 0 
     ? new Date(data.days[data.days.length - 1].date) 
@@ -172,88 +243,148 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
         </div>
       </div>
 
-      <div className="stats-section breakdown">
-        <h3>XP Source Breakdown (This Week)</h3>
-        <div className="xp-breakdown-chart">
-          <div className="breakdown-item">
-            <span>Task Quality A</span>
-            <span>{xpBreakdown.taskQuality.A} XP</span>
-          </div>
-          <div className="breakdown-item">
-            <span>Task Quality B</span>
-            <span>{xpBreakdown.taskQuality.B} XP</span>
-          </div>
-          <div className="breakdown-item">
-            <span>Task Quality C</span>
-            <span>{xpBreakdown.taskQuality.C} XP</span>
-          </div>
-          <div className="breakdown-item">
-            <span>Task Quality D</span>
-            <span>{xpBreakdown.taskQuality.D} XP</span>
-          </div>
-          <div className="breakdown-item">
-            <span>Focus Bonus</span>
-            <span>{xpBreakdown.focusBonus} XP</span>
-          </div>
-          <div className="breakdown-item">
-            <span>Plan Bonus</span>
-            <span>{xpBreakdown.planBonus} XP</span>
-          </div>
-          <div className="breakdown-item">
-            <span>Efficiency Bonus</span>
-            <span>{xpBreakdown.efficiencyBonus} XP</span>
-          </div>
-          <div className="breakdown-item">
-            <span>Time Bonus/Penalty</span>
-            <span>{xpBreakdown.timeBonus} XP</span>
-          </div>
-          <div className="breakdown-item">
-            <span>Reflection Bonus</span>
-            <span>{xpBreakdown.reflectionBonus} XP</span>
-          </div>
-        </div>
-      </div>
-
       <div className="stats-section charts">
         <h3>XP Over Time (Last 30 Days)</h3>
-        <div className="chart xp-chart">
-          {/* Placeholder for XP chart */}
-          <div className="chart-data">
-            {chartData.xpData.map(data => (
-              <div key={data.date} className="chart-bar" style={{ height: `${data.xp / 10}%` }}>
-                <div className="tooltip">{data.date}: {data.xp} XP</div>
+        <div className="chart">
+          <div className="y-axis">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="y-label">
+                {Math.round(maxXP * i / 5)}
               </div>
             ))}
+          </div>
+          <div className="chart-content">
+            <svg className="chart-svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
+              <polyline
+                points={days.map((day, i) => 
+                  `${(i * (1000 / (days.length - 1)))},${300 - (day.xp / maxXP * 300)}`
+                ).join(' ')}
+                fill="none"
+                stroke="rgb(46, 170, 220)"
+                strokeWidth="2"
+              />
+              {days.map((day, i) => (
+                <g key={i}>
+                  <circle
+                    cx={i * (1000 / (days.length - 1))}
+                    cy={300 - (day.xp / maxXP * 300)}
+                    r="6"
+                    fill="rgb(46, 170, 220)"
+                    className="chart-dot"
+                  />
+                  <title>{`${formatDateShort(day.date)}: ${day.xp} XP`}</title>
+                </g>
+              ))}
+            </svg>
+            <div className="x-axis">
+              {days.map((day, i) => (
+                <div key={i} className="x-label">
+                  {formatDateShort(day.date)}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         <h3>Time Tracked (Last 30 Days)</h3>
-        <div className="chart time-chart">
-          {/* Placeholder for time chart */}
-          <div className="chart-data">
-            {chartData.timeData.map(data => (
-              <div key={data.date} className="chart-bar" style={{ height: `${data.minutes / 5}%` }}>
-                <div className="tooltip">{data.date}: {data.minutes} minutes</div>
+        <div className="chart">
+          <div className="y-axis">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="y-label">
+                {Math.round(maxMinutes * i / 5)}m
               </div>
             ))}
+          </div>
+          <div className="chart-content">
+            <svg className="chart-svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
+              <polyline
+                points={days.map((day, i) => 
+                  `${(i * (1000 / (days.length - 1)))},${300 - (day.minutes / maxMinutes * 300)}`
+                ).join(' ')}
+                fill="none"
+                stroke="#2ecc71"
+                strokeWidth="2"
+              />
+              {days.map((day, i) => (
+                <g key={i}>
+                  <circle
+                    cx={i * (1000 / (days.length - 1))}
+                    cy={300 - (day.minutes / maxMinutes * 300)}
+                    r="6"
+                    fill="#2ecc71"
+                    className="chart-dot"
+                  />
+                  <title>{`${formatDateShort(day.date)}: ${day.minutes}m`}</title>
+                </g>
+              ))}
+            </svg>
+            <div className="x-axis">
+              {days.map((day, i) => (
+                <div key={i} className="x-label">
+                  {formatDateShort(day.date)}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="stats-section journal">
-        <h3>Journal (Last 30 Days)</h3>
+        <h3>Daily Records</h3>
         <div className="journal-entries">
-          {last30Days.map(day => (
-            <div key={day.id} className="journal-entry">
-              <div className="entry-date">
-                {new Date(day.date).toLocaleDateString()}
-              </div>
-              {day.reflection && (
-                <div className="entry-content">{day.reflection}</div>
-              )}
-            </div>
+          {days.map(day => (
+            <button
+              key={day.date.toISOString()}
+              className={`journal-entry-button ${selectedDay?.date === day.date ? 'selected' : ''} ${!day.hasData ? 'no-data' : ''}`}
+              onClick={() => day.hasData && setSelectedDay(selectedDay?.date === day.date ? null : day)}
+              disabled={!day.hasData}
+            >
+              {formatDate(day.date)}
+              {!day.hasData && ' (No Data)'}
+            </button>
           ))}
         </div>
+        {selectedDay && (
+          <div className="day-details-popup">
+            <div className="popup-content">
+              <h3>{formatDate(selectedDay.date)}</h3>
+              <div className="day-stats">
+                <div>XP: {selectedDay.xp}</div>
+                <div>Time Tracked: {selectedDay.minutes}m</div>
+                <div>Unaccounted Time: {selectedDay.unaccountedMinutes}m</div>
+              </div>
+              <div className="day-tasks">
+                <h4>Plan</h4>
+                <div className="task-list">
+                  {selectedDay.planItems.map(item => (
+                    <div key={item.id} className="task-item">
+                      {item.description}
+                    </div>
+                  ))}
+                </div>
+                <h4>Completed</h4>
+                <div className="task-list">
+                  {selectedDay.factItems.map(item => (
+                    <div key={item.id} className="task-item">
+                      {item.description}
+                    </div>
+                  ))}
+                </div>
+                {selectedDay.reflection && (
+                  <>
+                    <h4>Journal</h4>
+                    <div className="reflection-text">
+                      {selectedDay.reflection}
+                    </div>
+                  </>
+                )}
+              </div>
+              <button className="close-button" onClick={() => setSelectedDay(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

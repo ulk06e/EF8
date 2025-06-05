@@ -1,5 +1,5 @@
 import React from 'react';
-import { ColumnItem } from '../types';
+import { ColumnItem, TaskQuality } from '../types';
 import '../styles/notion.css';
 
 interface XPCalculationPopupProps {
@@ -8,69 +8,102 @@ interface XPCalculationPopupProps {
 }
 
 const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }) => {
-  const getQualityXP = (quality: string) => {
-    const map = { 'A': 8, 'B': 4, 'C': 2, 'D': 1 };
-    return map[quality as keyof typeof map] || 0;
+  const getMultiplierClass = (type: string, value: number) => {
+    switch (type) {
+      case 'quality':
+        return value === 4 ? 'multiplier-max' : 
+               value === 3 ? 'multiplier-partial' : 
+               'multiplier-none';
+      case 'priority':
+        return value === 1.5 ? 'multiplier-max' : 
+               value === 1.4 ? 'multiplier-partial' : 
+               value === 1.3 ? 'multiplier-partial' :
+               'multiplier-none';
+      case 'timeQuality':
+        return value > 1 ? 'multiplier-max' : 'multiplier-none';
+      case 'accuracy':
+        return value === 1 ? 'multiplier-max' : 'multiplier-none';
+      default:
+        return '';
+    }
   };
 
-  const getMultiplierClass = (value: number, maxValue: number) => {
-    if (value === 0) return 'multiplier-none';
-    if (value === maxValue) return 'multiplier-max';
-    return 'multiplier-partial';
-  };
-
-  const qualityXP = getQualityXP(item.taskQuality);
-  const focusBonus = item.timeQuality === 'pure' ? 3 : 0;
-  const priorityBonus = item.priority === 1 ? 3 : item.priority === 2 ? 1 : 0;
-  const planBonus = item.columnOrigin === 'plan' ? 2 : 0;
-  
   const actualDuration = item.actualDuration || 0;
   const estimatedMinutes = typeof item.estimatedMinutes === 'string' 
     ? parseInt(item.estimatedMinutes) 
     : item.estimatedMinutes;
 
-  const timeXP = item.taskQuality === 'A' || item.taskQuality === 'B'
-    ? Math.floor(actualDuration / 10)
-    : actualDuration > estimatedMinutes
-    ? -Math.floor((actualDuration - estimatedMinutes) / 10)
-    : 0;
+  // Base XP calculation
+  const baseXP = Math.floor(actualDuration / 20);
 
-  const efficiencyBonus = (item.taskQuality === 'A' || item.taskQuality === 'B') && actualDuration < estimatedMinutes
-    ? Math.floor((estimatedMinutes - actualDuration) / 15)
-    : 0;
+  // Multipliers
+  const qualityMultiplier = {
+    'A': 4,
+    'B': 3,
+    'C': 2,
+    'D': 1,
+  }[item.taskQuality] || 1;
+
+  const timeQualityMultiplier = item.timeQuality === 'pure' ? 1.5 : 1;
+
+  const priorityMultiplier = {
+    1: 1.5, 
+    2: 1.4,
+    3: 1.3,
+    4: 1,
+    5: 1,
+    6: 1,
+    7: 1,
+    8: 1,
+    9: 1,
+    10: 1,
+  }[item.priority] || 1;
+
+  const accuracyMultiplier = (() => {
+    if (actualDuration === 0 || estimatedMinutes === 0) return 1;
+    const ratio = actualDuration / estimatedMinutes;
+    if (ratio > 1.2 || ratio < 0.5) {
+      return 0.7;
+    }
+    return 1;
+  })();
+
+  const finalXP = Math.round(
+    baseXP * 
+    qualityMultiplier * 
+    timeQualityMultiplier * 
+    priorityMultiplier * 
+    accuracyMultiplier
+  );
 
   return (
     <div className="popup-overlay" onClick={onClose}>
       <div className="popup-content xp-calculation" onClick={e => e.stopPropagation()}>
         <h2>XP Calculation</h2>
         <div className="xp-breakdown">
-          <div className={`xp-row ${getMultiplierClass(qualityXP, 8)}`}>
-            <span>Task Quality ({item.taskQuality})</span>
-            <span>+{qualityXP} XP</span>
+          <div className="xp-row">
+            <span>Base XP (20min = 1pt)</span>
+            <span>{baseXP} XP</span>
           </div>
-          <div className={`xp-row ${getMultiplierClass(focusBonus, 3)}`}>
-            <span>Focus Quality ({item.timeQuality})</span>
-            <span>+{focusBonus} XP</span>
+          <div className={`xp-row ${getMultiplierClass('quality', qualityMultiplier)}`}>
+            <span>Quality Multiplier ({item.taskQuality})</span>
+            <span>×{qualityMultiplier.toFixed(2)}</span>
           </div>
-          <div className={`xp-row ${getMultiplierClass(priorityBonus, 3)}`}>
+          <div className={`xp-row ${getMultiplierClass('timeQuality', timeQualityMultiplier)}`}>
+            <span>Time Quality ({item.timeQuality})</span>
+            <span>×{timeQualityMultiplier.toFixed(1)}</span>
+          </div>
+          <div className={`xp-row ${getMultiplierClass('priority', priorityMultiplier)}`}>
             <span>Priority (#{item.priority})</span>
-            <span>+{priorityBonus} XP</span>
+            <span>×{priorityMultiplier.toFixed(1)}</span>
           </div>
-          <div className={`xp-row ${getMultiplierClass(planBonus, 2)}`}>
-            <span>Plan Bonus</span>
-            <span>+{planBonus} XP</span>
-          </div>
-          <div className={`xp-row ${getMultiplierClass(timeXP, Math.floor(actualDuration / 10))}`}>
-            <span>Time XP ({actualDuration}m)</span>
-            <span>{timeXP > 0 ? '+' : ''}{timeXP} XP</span>
-          </div>
-          <div className={`xp-row ${getMultiplierClass(efficiencyBonus, Math.floor((estimatedMinutes - actualDuration) / 15))}`}>
-            <span>Efficiency Bonus</span>
-            <span>+{efficiencyBonus} XP</span>
+          <div className={`xp-row ${getMultiplierClass('accuracy', accuracyMultiplier)}`}>
+            <span>Accuracy Multiplier</span>
+            <span>×{accuracyMultiplier.toFixed(1)}</span>
           </div>
           <div className="xp-total">
             <span>Total</span>
-            <span>+{item.xpValue} XP</span>
+            <span>{finalXP} XP</span>
           </div>
         </div>
       </div>
@@ -79,3 +112,7 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
 };
 
 export default XPCalculationPopup; 
+
+
+
+  // {timeXP > 0 ? '+' : ''}{timeXP}

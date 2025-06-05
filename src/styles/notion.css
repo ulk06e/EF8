@@ -147,8 +147,8 @@ body {
 }
 
 .column-item {
-  border: 1px solid #000;
-  border-radius: 4px;
+  border: 1px solid #c0c0c0;
+  border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
   cursor: pointer;
@@ -218,7 +218,7 @@ body {
 }
 
 .column-item.completed {
-  background: rgba(46, 170, 220, 0.1);
+  background: none;
 }
 
 .item-content {
@@ -619,7 +619,7 @@ textarea.full-width {
   display: flex;
   gap: 12px;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .task-actions-buttons button {
@@ -634,20 +634,21 @@ textarea.full-width {
   transition: opacity 0.2s;
 }
 
-.task-actions-buttons .cancel-action {
-  background-color: #95a5a6;
+.task-actions-buttons button:hover {
+  opacity: 0.9;
 }
 
 .task-actions-buttons .delete-action {
   background-color: #e74c3c;
 }
 
-.task-actions-buttons .start-action {
-  background-color: #2ecc71;
+.task-actions-buttons .edit-action {
+  background-color: #f1c40f;
+  color: #2c3e50;
 }
 
-.task-actions-buttons button:hover {
-  opacity: 0.9;
+.task-actions-buttons .start-action {
+  background-color: #2ecc71;
 }
 
 /* Bottom actions */
@@ -1057,82 +1058,193 @@ textarea.full-width {
 
 /* Charts */
 .chart {
-  height: 300px;
+  position: relative;
+  width: 100%;
+  height: 400px;
   margin: 20px 0;
   padding: 20px;
-  background: #f7f7f7;
-  border-radius: 4px;
-  position: relative;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.chart-data {
-  display: flex;
-  align-items: flex-end;
+.chart-content {
+  position: relative;
+  width: calc(100% - 60px);
+  height: calc(100% - 40px);
+  margin-left: 60px;
+}
+
+.chart-svg {
+  width: 100%;
   height: 100%;
-  gap: 2px;
 }
 
-.chart-bar {
-  flex: 1;
-  background: rgb(46, 170, 220);
-  min-height: 1px;
-  position: relative;
-  transition: height 0.3s ease;
-}
-
-.chart-bar:hover .tooltip {
-  opacity: 1;
-}
-
-.tooltip {
+.y-axis {
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
+  left: 0;
+  top: 0;
+  bottom: 40px;
+  width: 60px;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+}
+
+.y-label {
   font-size: 12px;
+  color: #666;
+  text-align: right;
+  padding-right: 10px;
+}
+
+.x-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -40px;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  overflow-x: auto;
+}
+
+.x-label {
+  font-size: 12px;
+  color: #666;
+  transform: rotate(-45deg);
+  transform-origin: top left;
   white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.2s;
-  pointer-events: none;
-  z-index: 1;
+  margin-top: 10px;
 }
 
-.xp-chart .chart-bar {
-  background: rgb(46, 170, 220);
-}
-
-.time-chart .chart-bar {
-  background: #27ae60;
-}
-
-/* Journal Updates */
 .journal-entries {
-  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.journal-entry-button {
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.journal-entry-button:hover {
+  background-color: #f5f5f5;
+}
+
+.journal-entry-button.selected {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.journal-entry-button.no-data {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.journal-entry-button.no-data:hover {
+  background-color: #f5f5f5;
+}
+
+.day-details-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.day-details-popup .popup-content {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
   overflow-y: auto;
 }
 
-.journal-entry {
+.day-details-popup .day-stats {
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--notion-hover);
+  border-radius: 4px;
+  font-size: 15px;
+}
+
+.day-details-popup .day-tasks {
+  margin-top: 24px;
+}
+
+.day-details-popup h4 {
+  margin: 16px 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.day-details-popup .task-list {
+  margin: 8px 0 16px;
+}
+
+.day-details-popup .task-item {
   padding: 12px;
-  border-bottom: 1px solid var(--notion-border);
+  background: var(--notion-hover);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 15px;
 }
 
-.journal-entry:last-child {
-  border-bottom: none;
-}
-
-.entry-date {
-  font-size: 14px;
-  color: var(--notion-gray);
-  margin-bottom: 4px;
-}
-
-.entry-content {
-  font-size: 14px;
-  line-height: 1.5;
+.day-details-popup .reflection-text {
+  padding: 16px;
+  background: var(--notion-hover);
+  border-radius: 4px;
+  margin-top: 8px;
   white-space: pre-wrap;
-  color: var(--notion-text);
+  font-size: 15px;
+}
+
+.day-details-popup .close-button {
+  margin-top: 24px;
+  padding: 8px 16px;
+  background: var(--notion-text);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 15px;
+  width: 100%;
+}
+
+.day-details-popup .close-button:hover {
+  opacity: 0.9;
+}
+
+.chart-dot {
+  transition: r 0.2s;
+  cursor: pointer;
+}
+
+.chart-dot:hover {
+  r: 8;
+}
+
+.chart-dot title {
+  pointer-events: none;
 } 

@@ -270,6 +270,28 @@ class StorageService {
     this.addXP(2); // Add 2 XP for reflection
     this.saveData();
   }
+
+  public updateFactItem(updatedItem: ColumnItem): void {
+    const factItems = this.data.currentDay.factItems;
+    const index = factItems.findIndex(item => item.id === updatedItem.id);
+    
+    if (index !== -1) {
+      factItems[index] = updatedItem;
+      this.saveData();
+      this.notifyListeners();
+    }
+  }
+
+  public updatePlanItem(updatedItem: ColumnItem): void {
+    const planItems = this.data.currentDay.planItems;
+    const index = planItems.findIndex(item => item.id === updatedItem.id);
+    
+    if (index !== -1) {
+      planItems[index] = updatedItem;
+      this.saveData();
+      this.notifyListeners();
+    }
+  }
 }
 
 const storage = new StorageService();

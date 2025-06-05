@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Column as ColumnType, ColumnItem } from '../types';
+import { Column as ColumnType, ColumnItem, AddItemFormData } from '../types';
 import XPCalculationPopup from './XPCalculationPopup';
+import AddItemPopup from './AddItemPopup';
 
 interface ColumnProps {
   data: ColumnType;
@@ -8,11 +9,13 @@ interface ColumnProps {
   onAddClick?: () => void;
   columnId: string;
   onItemClick?: (item: ColumnItem) => void;
+  onItemEdit?: (item: ColumnItem, formData: AddItemFormData) => void;
 }
 
-const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnId, onItemClick }) => {
+const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnId, onItemClick, onItemEdit }) => {
   const [selectedItem, setSelectedItem] = useState<ColumnItem | null>(null);
   const [showXPCalculation, setShowXPCalculation] = useState<ColumnItem | null>(null);
+  const [editingItem, setEditingItem] = useState<ColumnItem | null>(null);
 
   const sortedItems = [...data.items].sort((a, b) => {
     if (columnId === 'plan') {
@@ -81,6 +84,21 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
   const handleDeleteClick = () => {
     if (selectedItem && onItemToggle) {
       onItemToggle(selectedItem.id);
+      setSelectedItem(null);
+    }
+  };
+
+  const handleEditClick = () => {
+    if (selectedItem && columnId === 'plan') {
+      setEditingItem(selectedItem);
+      setSelectedItem(null);
+    }
+  };
+
+  const handleEditConfirm = (formData: AddItemFormData) => {
+    if (editingItem && onItemEdit && columnId === 'plan') {
+      onItemEdit(editingItem, formData);
+      setEditingItem(null);
       setSelectedItem(null);
     }
   };
@@ -167,13 +185,16 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
           </React.Fragment>
         ))}
       </div>
-      {selectedItem && (
+      {selectedItem && columnId === 'plan' && (
         <div className="task-actions-overlay" onClick={() => setSelectedItem(null)}>
           <div className="task-actions-content" onClick={e => e.stopPropagation()}>
             <h3>{selectedItem.description}</h3>
             <div className="task-actions-buttons">
               <button className="delete-action" onClick={handleDeleteClick}>
                 Delete
+              </button>
+              <button className="edit-action" onClick={handleEditClick}>
+                Edit
               </button>
               <button className="start-action" onClick={handleStartClick}>
                 Start
@@ -182,7 +203,14 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
           </div>
         </div>
       )}
-      {showXPCalculation && (
+      {editingItem && columnId === 'plan' && (
+        <AddItemPopup
+          initialData={editingItem}
+          onConfirm={handleEditConfirm}
+          onCancel={() => setEditingItem(null)}
+        />
+      )}
+      {showXPCalculation && columnId === 'fact' && (
         <XPCalculationPopup 
           item={showXPCalculation} 
           onClose={() => setShowXPCalculation(null)} 
