@@ -85,10 +85,37 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
     return breakdown;
   };
 
+  const getLast30Days = () => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+    
+    return data.days
+      .filter(day => new Date(day.date) >= thirtyDaysAgo)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const getChartData = () => {
+    const last30Days = getLast30Days();
+    const xpData = last30Days.map(day => ({
+      date: new Date(day.date).toLocaleDateString(),
+      xp: day.stats.dayXP
+    }));
+
+    const timeData = last30Days.map(day => ({
+      date: new Date(day.date).toLocaleDateString(),
+      minutes: day.stats.dayMinutes
+    }));
+
+    return { xpData, timeData };
+  };
+
   const thisWeekXP = calculateWeekXP(data.days);
   const lastWeekXP = calculateWeekXP(data.days, 1);
   const xpChange = lastWeekXP ? ((thisWeekXP - lastWeekXP) / lastWeekXP) * 100 : 0;
   const xpBreakdown = calculateXPBreakdown(data.days);
+  const chartData = getChartData();
+  const last30Days = getLast30Days();
 
   const firstTaskDate = data.days.length > 0 
     ? new Date(data.days[data.days.length - 1].date) 
@@ -148,7 +175,6 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
       <div className="stats-section breakdown">
         <h3>XP Source Breakdown (This Week)</h3>
         <div className="xp-breakdown-chart">
-          {/* Placeholder for chart - you'll need to add a charting library */}
           <div className="breakdown-item">
             <span>Task Quality A</span>
             <span>{xpBreakdown.taskQuality.A} XP</span>
@@ -188,32 +214,42 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
         </div>
       </div>
 
-      <div className="stats-section daily">
-        <h3>Daily Activity</h3>
-        <div className="daily-chart">
-          {/* Placeholder for chart - you'll need to add a charting library */}
-          {data.days.map(day => (
-            <div key={day.id} className="daily-row">
-              <span>{new Date(day.date).toLocaleDateString()}</span>
-              <span>{day.stats.dayXP} XP</span>
-              <span>{day.stats.dayMinutes}m</span>
-            </div>
-          ))}
+      <div className="stats-section charts">
+        <h3>XP Over Time (Last 30 Days)</h3>
+        <div className="chart xp-chart">
+          {/* Placeholder for XP chart */}
+          <div className="chart-data">
+            {chartData.xpData.map(data => (
+              <div key={data.date} className="chart-bar" style={{ height: `${data.xp / 10}%` }}>
+                <div className="tooltip">{data.date}: {data.xp} XP</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <h3>Time Tracked (Last 30 Days)</h3>
+        <div className="chart time-chart">
+          {/* Placeholder for time chart */}
+          <div className="chart-data">
+            {chartData.timeData.map(data => (
+              <div key={data.date} className="chart-bar" style={{ height: `${data.minutes / 5}%` }}>
+                <div className="tooltip">{data.date}: {data.minutes} minutes</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="stats-section journal">
-        <h3>Journal</h3>
+        <h3>Journal (Last 30 Days)</h3>
         <div className="journal-entries">
-          {data.days.map(day => (
+          {last30Days.map(day => (
             <div key={day.id} className="journal-entry">
               <div className="entry-date">
                 {new Date(day.date).toLocaleDateString()}
               </div>
-              {day.reflection ? (
+              {day.reflection && (
                 <div className="entry-content">{day.reflection}</div>
-              ) : (
-                <button className="add-reflection">Add Reflection</button>
               )}
             </div>
           ))}

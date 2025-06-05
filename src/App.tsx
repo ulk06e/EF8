@@ -195,22 +195,24 @@ function App() {
     setFailedItem(null);
   };
 
+  const handleDailyPlanner = () => {
+    setShowStatistics(false);
+  };
+
+  const handleStatistics = () => {
+    setShowStatistics(true);
+  };
+
   const handleNewDay = () => {
     if (window.confirm('Are you sure you want to start a new day? This will clear today\'s data and subtract today\'s XP from your total.')) {
       storage.transitionToNewDay(false);
     }
-    setIsMenuOpen(false);
   };
 
   const handleClearData = () => {
     if (window.confirm('Are you sure you want to clear ALL data? This cannot be undone!')) {
       storage.clearAllData();
     }
-    setIsMenuOpen(false);
-  };
-
-  const handleStatistics = () => {
-    setShowStatistics(true);
   };
 
   const handleReflectionSubmit = (reflection: string) => {
@@ -279,6 +281,7 @@ function App() {
         onNewDay={handleNewDay}
         onClearData={handleClearData}
         onStatistics={handleStatistics}
+        onDailyPlanner={handleDailyPlanner}
       />
       {showReflection && (
         <DailyReflectionPopup

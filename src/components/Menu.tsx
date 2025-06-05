@@ -7,9 +7,22 @@ interface MenuProps {
   onNewDay: () => void;
   onClearData: () => void;
   onStatistics: () => void;
+  onDailyPlanner: () => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ isOpen, onClose, onNewDay, onClearData, onStatistics }) => {
+const Menu: React.FC<MenuProps> = ({ 
+  isOpen, 
+  onClose, 
+  onNewDay, 
+  onClearData, 
+  onStatistics,
+  onDailyPlanner
+}) => {
+  const handleMenuItemClick = (action: () => void) => {
+    action();
+    onClose();
+  };
+
   return (
     <>
       {isOpen && (
@@ -17,13 +30,28 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose, onNewDay, onClearData, onS
           <div className="menu-content" onClick={e => e.stopPropagation()}>
             <h2>Menu</h2>
             <div className="menu-items">
-              <button onClick={onNewDay} className="menu-item">
-                New Day
+              <button 
+                onClick={() => handleMenuItemClick(onDailyPlanner)} 
+                className="menu-item"
+              >
+                Daily Planner
               </button>
-              <button onClick={onStatistics} className="menu-item">
+              <button 
+                onClick={() => handleMenuItemClick(onStatistics)} 
+                className="menu-item"
+              >
                 Statistics
               </button>
-              <button onClick={onClearData} className="menu-item danger">
+              <button 
+                onClick={() => handleMenuItemClick(onNewDay)} 
+                className="menu-item danger"
+              >
+                New Day
+              </button>
+              <button 
+                onClick={() => handleMenuItemClick(onClearData)} 
+                className="menu-item danger"
+              >
                 Clear All Data
               </button>
             </div>

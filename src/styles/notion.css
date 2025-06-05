@@ -1053,4 +1053,86 @@ textarea.full-width {
 .add-reflection:hover {
   background: var(--notion-hover);
   border-style: solid;
+}
+
+/* Charts */
+.chart {
+  height: 300px;
+  margin: 20px 0;
+  padding: 20px;
+  background: #f7f7f7;
+  border-radius: 4px;
+  position: relative;
+}
+
+.chart-data {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  gap: 2px;
+}
+
+.chart-bar {
+  flex: 1;
+  background: rgb(46, 170, 220);
+  min-height: 1px;
+  position: relative;
+  transition: height 0.3s ease;
+}
+
+.chart-bar:hover .tooltip {
+  opacity: 1;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.xp-chart .chart-bar {
+  background: rgb(46, 170, 220);
+}
+
+.time-chart .chart-bar {
+  background: #27ae60;
+}
+
+/* Journal Updates */
+.journal-entries {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.journal-entry {
+  padding: 12px;
+  border-bottom: 1px solid var(--notion-border);
+}
+
+.journal-entry:last-child {
+  border-bottom: none;
+}
+
+.entry-date {
+  font-size: 14px;
+  color: var(--notion-gray);
+  margin-bottom: 4px;
+}
+
+.entry-content {
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--notion-text);
 } 
