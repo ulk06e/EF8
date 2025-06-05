@@ -9,6 +9,7 @@ interface MenuProps {
   onStatistics: () => void;
   onDailyPlanner: () => void;
   onSetGoals: () => void;
+  currentPage: 'planner' | 'goals' | 'statistics';
 }
 
 const Menu: React.FC<MenuProps> = ({ 
@@ -18,7 +19,8 @@ const Menu: React.FC<MenuProps> = ({
   onClearData, 
   onStatistics,
   onDailyPlanner,
-  onSetGoals
+  onSetGoals,
+  currentPage
 }) => {
   const handleMenuItemClick = (action: () => void) => {
     action();
@@ -34,19 +36,19 @@ const Menu: React.FC<MenuProps> = ({
             <div className="menu-items">
               <button 
                 onClick={() => handleMenuItemClick(onDailyPlanner)} 
-                className="menu-item"
+                className={`menu-item ${currentPage === 'planner' ? 'active' : ''}`}
               >
                 Daily Planner
               </button>
               <button 
                 onClick={() => handleMenuItemClick(onSetGoals)} 
-                className="menu-item"
+                className={`menu-item ${currentPage === 'goals' ? 'active' : ''}`}
               >
                 Set Goals
               </button>
               <button 
                 onClick={() => handleMenuItemClick(onStatistics)} 
-                className="menu-item"
+                className={`menu-item ${currentPage === 'statistics' ? 'active' : ''}`}
               >
                 Statistics
               </button>

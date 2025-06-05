@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StorageData, DayData } from '../types/storage';
+import { ColumnItem } from '../types';
 import '../styles/notion.css';
 
 interface StatisticsProps {
@@ -198,6 +199,36 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
 
   const activeDays = data.days.filter(day => day.stats.dayXP > 0).length;
 
+  const getUnaccountedMinutes = (currentItem: ColumnItem, items: ColumnItem[]): number | null => {
+    if (!currentItem.completedTime) return null;
+
+    const currentTime = new Date(currentItem.completedTime);
+    const index = items.findIndex(item => item.id === currentItem.id);
+    let previousTime: Date;
+
+    if (index === items.length - 1) {
+      previousTime = new Date(currentTime);
+      previousTime.setHours(4, 0, 0, 0);
+      if (previousTime > currentTime) {
+        previousTime.setDate(previousTime.getDate() - 1);
+      }
+    } else {
+      const nextItem = items[index + 1];
+      if (!nextItem.completedTime) return null;
+      previousTime = new Date(nextItem.completedTime);
+    }
+
+    const diffMinutes = Math.floor((currentTime.getTime() - previousTime.getTime()) / (1000 * 60));
+    const accountedMinutes = currentItem.actualDuration || 0;
+    const unaccountedMinutes = diffMinutes - accountedMinutes;
+
+    return unaccountedMinutes > 0 ? unaccountedMinutes : null;
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <div className="statistics-page">
       <div className="stats-section summary">
@@ -244,7 +275,7 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
       </div>
 
       <div className="stats-section charts">
-        <h3>XP Over Time (Last 30 Days)</h3>
+        <h3>XP Over Time (Last 7 Days)</h3>
         <div className="chart">
           <div className="y-axis">
             {[...Array(6)].map((_, i) => (
@@ -286,7 +317,7 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
           </div>
         </div>
 
-        <h3>Time Tracked (Last 30 Days)</h3>
+        <h3>Time Tracked (Last 7 Days)</h3>
         <div className="chart">
           <div className="y-axis">
             {[...Array(6)].map((_, i) => (
@@ -354,21 +385,38 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
                 <div>Unaccounted Time: {selectedDay.unaccountedMinutes}m</div>
               </div>
               <div className="day-tasks">
-                <h4>Plan</h4>
+                <h4>Completed Tasks</h4>
                 <div className="task-list">
-                  {selectedDay.planItems.map(item => (
-                    <div key={item.id} className="task-item">
-                      {item.description}
-                    </div>
-                  ))}
-                </div>
-                <h4>Completed</h4>
-                <div className="task-list">
-                  {selectedDay.factItems.map(item => (
-                    <div key={item.id} className="task-item">
-                      {item.description}
-                    </div>
-                  ))}
+                  {selectedDay.factItems.map((item, index) => {
+                    const unaccountedMinutes = getUnaccountedMinutes(item, selectedDay.factItems);
+                    return (
+                      <React.Fragment key={item.id}>
+                        {unaccountedMinutes !== null && (
+                          <div className="unaccounted-minutes">
+                            Unaccounted: {unaccountedMinutes}m
+                          </div>
+                        )}
+                        <div className={`task-item ${item.timeQuality === 'pure' ? 'pure-time' : ''} ${item.priority <= 2 ? 'high-priority' : ''}`}>
+                          <div className="item-block">
+                            <div className="item-header">
+                              <span className="item-name">
+                                <span className="item-priority">#{item.priority}</span>
+                                <span className="item-separator">-</span>
+                                <span className="item-quality">{item.taskQuality}</span>
+                              </span>
+                              <span className="item-description">: {item.description}</span>
+                            </div>
+                          </div>
+                          <div className="item-block">
+                            <div className="item-details">
+                              <div>{item.actualDuration}m/{item.estimatedMinutes}m - {item.completedTime && formatTime(new Date(item.completedTime))}</div>
+                              <div className="xp-value">+{item.xpValue} XP</div>
+                            </div>
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
                 </div>
                 {selectedDay.reflection && (
                   <>

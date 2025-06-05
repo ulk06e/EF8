@@ -242,6 +242,12 @@ function App() {
     setShowReflection(false);
   };
 
+  const getCurrentPage = () => {
+    if (showGoals) return 'goals';
+    if (showStatistics) return 'statistics';
+    return 'planner';
+  };
+
   return (
     <div className="container">
       <div className="top-bar">
@@ -250,7 +256,7 @@ function App() {
             <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <Header stats={stats} />
+        <Header stats={stats} onTitleClick={handleDailyPlanner} />
       </div>
       {showGoals ? (
         <Goals stats={stats} />
@@ -308,6 +314,7 @@ function App() {
         onStatistics={handleStatistics}
         onDailyPlanner={handleDailyPlanner}
         onSetGoals={handleSetGoals}
+        currentPage={getCurrentPage()}
       />
       {showReflection && (
         <DailyReflectionPopup

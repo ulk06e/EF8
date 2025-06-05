@@ -4,14 +4,15 @@ import '../styles/notion.css';
 
 interface HeaderProps {
   stats: Stats;
+  onTitleClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ stats }) => {
+const Header: React.FC<HeaderProps> = ({ stats, onTitleClick }) => {
   const progressPercentage = (stats.currentXP / stats.nextLevelXP) * 100;
 
   return (
     <div className="header">
-      <h1>Game's Pace</h1>
+      <h1 onClick={onTitleClick} className="clickable-title">Game's Pace</h1>
       <div className="level-block">
         <span>Level {stats.currentLevel}</span>
         <div className="progress-bar">
