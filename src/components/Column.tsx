@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Column as ColumnType, ColumnItem } from '../types';
+import XPCalculationPopup from './XPCalculationPopup';
 
 interface ColumnProps {
   data: ColumnType;
@@ -11,6 +12,7 @@ interface ColumnProps {
 
 const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnId, onItemClick }) => {
   const [selectedItem, setSelectedItem] = useState<ColumnItem | null>(null);
+  const [showXPCalculation, setShowXPCalculation] = useState<ColumnItem | null>(null);
 
   const sortedItems = [...data.items].sort((a, b) => {
     if (columnId === 'plan') {
@@ -64,6 +66,8 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
   const handleItemClick = (item: ColumnItem) => {
     if (columnId === 'plan') {
       setSelectedItem(item);
+    } else if (columnId === 'fact') {
+      setShowXPCalculation(item);
     }
   };
 
@@ -177,6 +181,12 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
             </div>
           </div>
         </div>
+      )}
+      {showXPCalculation && (
+        <XPCalculationPopup 
+          item={showXPCalculation} 
+          onClose={() => setShowXPCalculation(null)} 
+        />
       )}
     </div>
   );

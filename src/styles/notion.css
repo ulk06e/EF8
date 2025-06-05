@@ -26,7 +26,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--notion-border);
 }
 
@@ -828,4 +828,218 @@ textarea.full-width {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
+}
+
+/* XP Calculation Popup */
+.xp-calculation {
+  max-width: 400px !important;
+}
+
+.xp-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.xp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 15px;
+}
+
+.xp-row.multiplier-max {
+  background-color: rgba(46, 204, 113, 0.1);
+  color: #27ae60;
+}
+
+.xp-row.multiplier-partial {
+  background-color: rgba(241, 196, 15, 0.1);
+  color: #f39c12;
+}
+
+.xp-row.multiplier-none {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: #c0392b;
+}
+
+.xp-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  margin-top: 8px;
+  border-top: 2px solid var(--notion-border);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Header Level Block */
+.level-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid var(--notion-border);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.level-block .progress-bar {
+  width: 100px;
+  height: 6px;
+}
+
+/* Statistics Page */
+.statistics-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.stats-section {
+  background: white;
+  border: 1px solid var(--notion-border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.stats-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Summary Section */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.summary .stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #f7f7f7;
+  border-radius: 4px;
+}
+
+.summary .stat-item span:first-child {
+  font-size: 14px;
+  color: var(--notion-gray);
+}
+
+.summary .stat-item span:last-child {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* Weekly Comparison */
+.weekly-comparison {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.weekly-comparison .stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f7f7f7;
+  border-radius: 4px;
+}
+
+.weekly-comparison .positive {
+  color: #27ae60;
+}
+
+.weekly-comparison .negative {
+  color: #e74c3c;
+}
+
+/* XP Breakdown */
+.xp-breakdown-chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f7f7f7;
+  border-radius: 4px;
+}
+
+/* Daily Activity */
+.daily-chart {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.daily-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px;
+  gap: 16px;
+  padding: 12px;
+  border-bottom: 1px solid var(--notion-border);
+}
+
+.daily-row:last-child {
+  border-bottom: none;
+}
+
+/* Journal */
+.journal-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.journal-entry {
+  padding: 16px;
+  border: 1px solid var(--notion-border);
+  border-radius: 4px;
+}
+
+.entry-date {
+  font-size: 14px;
+  color: var(--notion-gray);
+  margin-bottom: 8px;
+}
+
+.entry-content {
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.add-reflection {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px dashed var(--notion-border);
+  border-radius: 4px;
+  color: var(--notion-gray);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.add-reflection:hover {
+  background: var(--notion-hover);
+  border-style: solid;
 } 
