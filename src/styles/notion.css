@@ -26,14 +26,14 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
   padding: 12px 20px;
-  border-bottom: 1px solid var(--notion-border);
 }
 
 .header h1 {
+  margin: 0;
   font-size: 24px;
   font-weight: 600;
-  margin: 0;
 }
 
 .xp-info {
@@ -718,7 +718,9 @@ textarea.full-width {
   border: none;
   padding: 8px;
   cursor: pointer;
-  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .menu-button svg {
@@ -798,7 +800,8 @@ textarea.full-width {
 .top-bar {
   display: flex;
   align-items: center;
-  padding: 12px 20px;
+  gap: 12px;
+  padding: 0 20px;
   border-bottom: 1px solid var(--notion-border);
 }
 
@@ -884,15 +887,23 @@ textarea.full-width {
   gap: 12px;
   padding: 8px 12px;
   background: white;
-  border: 1px solid var(--notion-border);
-  border-radius: 4px;
   font-size: 14px;
   font-weight: 500;
+  margin-left: auto;
 }
 
 .level-block .progress-bar {
-  width: 100px;
+  width: 120px;
   height: 6px;
+  background: var(--notion-hover);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.level-block .progress-bar-fill {
+  height: 100%;
+  background: rgb(46, 170, 220);
+  transition: width 0.3s ease;
 }
 
 /* Statistics Page */

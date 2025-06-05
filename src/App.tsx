@@ -11,6 +11,7 @@ import { Stats, Column as ColumnType, AddItemFormData, ColumnItem } from './type
 import { calculateXP } from './utils/xp';
 import storage from './services/storage';
 import './styles/notion.css';
+import Statistics from './components/Statistics';
 
 function App() {
   const [stats, setStats] = useState<Stats>({
@@ -36,6 +37,7 @@ function App() {
   const [failedItem, setFailedItem] = useState<ColumnItem | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showReflection, setShowReflection] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
 
   // Subscribe to storage changes
   useEffect(() => {
@@ -208,8 +210,7 @@ function App() {
   };
 
   const handleStatistics = () => {
-    // TODO: Implement statistics view
-    setIsMenuOpen(false);
+    setShowStatistics(true);
   };
 
   const handleReflectionSubmit = (reflection: string) => {
@@ -227,21 +228,30 @@ function App() {
         </button>
         <Header stats={stats} />
       </div>
-      <Dashboard stats={stats} />
-      <div className="columns-container">
-        <Column 
-          data={columns.plan} 
-          onItemToggle={handleItemToggle}
-          onAddClick={handleAddClick}
-          onItemClick={handleItemClick}
-          columnId="plan"
+      {showStatistics ? (
+        <Statistics 
+          data={storage.getData()} 
+          onClose={() => setShowStatistics(false)} 
         />
-        <Column 
-          data={columns.fact} 
-          onItemToggle={() => {}}
-          columnId="fact"
-        />
-      </div>
+      ) : (
+        <>
+          <Dashboard stats={stats} />
+          <div className="columns-container">
+            <Column 
+              data={columns.plan} 
+              onItemToggle={handleItemToggle}
+              onAddClick={handleAddClick}
+              onItemClick={handleItemClick}
+              columnId="plan"
+            />
+            <Column 
+              data={columns.fact} 
+              onItemToggle={() => {}}
+              columnId="fact"
+            />
+          </div>
+        </>
+      )}
       {showAddPopup && (
         <AddItemPopup
           onConfirm={handlePopupConfirm}
