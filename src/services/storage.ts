@@ -11,13 +11,11 @@ const calculateNextLevelXP = (level: number): number => {
   return 500 + (level - 5) * 10;
 };
 
-const getInitialRecords = (): Records => ({
-  highestTaskXP: 0,
-  longestPureStreak: 0,
-  mostPureTimeInDay: 0,
-  mostWorkTimeInDay: 0,
-  highestDayXP: 0,
-});
+const calculatePreviousLevelXP = (level: number): number => {
+  if (level <= 1) return 0;
+  if (level <= 6) return (level - 1) * 100;
+  return 500 + ((level - 1) - 5) * 10;
+};
 
 const createNewDay = (): DayData => {
   const now = new Date();
@@ -53,27 +51,26 @@ class StorageService {
 
   private loadData(): StorageData {
     const savedData = localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
+    if (!savedData) {
       return {
-        ...parsed,
-        currentDay: this.ensureCurrentDay(parsed.currentDay),
+        totalXP: 0,
+        currentLevel: 1,
+        nextLevelXP: 100,
+        streak: 0,
+        currentDay: createNewDay(),
+        days: [],
+        records: {
+          highestDayXP: 0,
+          mostWorkTimeInDay: 0,
+          mostPureTimeInDay: 0,
+          highestTaskXP: 0,
+        },
       };
     }
 
-    return this.getInitialData();
-  }
-
-  private getInitialData(): StorageData {
-    return {
-      totalXP: 0,
-      currentLevel: 1,
-      nextLevelXP: 100,
-      streak: 0,
-      records: getInitialRecords(),
-      days: [],
-      currentDay: createNewDay(),
-    };
+    const data = JSON.parse(savedData);
+    data.currentDay = this.ensureCurrentDay(data.currentDay);
+    return data;
   }
 
   private ensureCurrentDay(currentDay: DayData | null): DayData {
@@ -157,9 +154,9 @@ class StorageService {
     if (!isAutomatic) {
       this.data.totalXP -= currentDay.stats.dayXP;
       // Adjust level if needed
-      while (this.data.totalXP < this.calculatePreviousLevelXP(this.data.currentLevel)) {
+      while (this.data.totalXP < calculatePreviousLevelXP(this.data.currentLevel)) {
         this.data.currentLevel--;
-        this.data.nextLevelXP = this.calculateNextLevelXP(this.data.currentLevel);
+        this.data.nextLevelXP = calculateNextLevelXP(this.data.currentLevel);
       }
     }
 
@@ -167,19 +164,6 @@ class StorageService {
     const newDay = createNewDay();
     this.data.currentDay = newDay;
     this.saveData();
-  }
-
-  private calculateNextLevelXP(level: number): number {
-    if (level <= 5) {
-      return level * 100;
-    }
-    return 500 + (level - 5) * 10;
-  }
-
-  private calculatePreviousLevelXP(level: number): number {
-    if (level <= 1) return 0;
-    if (level <= 6) return (level - 1) * 100;
-    return 500 + (level - 6) * 10;
   }
 
   private updateRecords(day: DayData): void {
@@ -198,16 +182,21 @@ class StorageService {
     return this.data;
   }
 
-  public addXP(amount: number): void {
-    this.data.totalXP += amount;
-    this.data.currentDay.stats.dayXP += amount;
-
-    // Check for level up
-    while (this.data.totalXP >= this.data.nextLevelXP) {
-      this.data.currentLevel++;
-      this.data.nextLevelXP = calculateNextLevelXP(this.data.currentLevel);
-    }
-
+  public clearAllData(): void {
+    this.data = {
+      totalXP: 0,
+      currentLevel: 1,
+      nextLevelXP: 100,
+      streak: 0,
+      currentDay: createNewDay(),
+      days: [],
+      records: {
+        highestDayXP: 0,
+        mostWorkTimeInDay: 0,
+        mostPureTimeInDay: 0,
+        highestTaskXP: 0,
+      },
+    };
     this.saveData();
   }
 
@@ -247,12 +236,41 @@ class StorageService {
     this.saveData();
   }
 
-  public clearAllData(): void {
-    localStorage.removeItem(STORAGE_KEY);
-    this.data = this.getInitialData();
+  public addXP(xp: number): void {
+    this.data.totalXP += xp;
+    this.data.currentDay.stats.dayXP += xp;
+
+    // Level up check
+    while (this.data.totalXP >= this.data.nextLevelXP) {
+      this.data.currentLevel++;
+      this.data.nextLevelXP = calculateNextLevelXP(this.data.currentLevel);
+    }
+
+    this.saveData();
+  }
+
+  public shouldShowReflection(): boolean {
+    const now = new Date();
+    const lastPrompt = this.data.lastReflectionPrompt ? new Date(this.data.lastReflectionPrompt) : null;
+    
+    // If we've never shown a prompt, or if it's a different day
+    if (!lastPrompt || lastPrompt.toDateString() !== now.toDateString()) {
+      // Only show if it's after 4 AM
+      if (now.getHours() >= DAY_START_HOUR) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  public addReflection(reflection: string): void {
+    this.data.currentDay.reflection = reflection;
+    this.data.lastReflectionPrompt = new Date().toISOString();
+    this.addXP(2); // Add 2 XP for reflection
     this.saveData();
   }
 }
 
-export const storage = new StorageService();
+const storage = new StorageService();
 export default storage; 

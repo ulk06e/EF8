@@ -5,7 +5,10 @@ import Column from './components/Column';
 import AddItemPopup from './components/AddItemPopup';
 import Timer from './components/Timer';
 import FailurePopup from './components/FailurePopup';
+import Menu from './components/Menu';
+import DailyReflectionPopup from './components/DailyReflectionPopup';
 import { Stats, Column as ColumnType, AddItemFormData, ColumnItem } from './types';
+import { calculateXP } from './utils/xp';
 import storage from './services/storage';
 import './styles/notion.css';
 
@@ -31,6 +34,8 @@ function App() {
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [activeTimer, setActiveTimer] = useState<ColumnItem | null>(null);
   const [failedItem, setFailedItem] = useState<ColumnItem | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showReflection, setShowReflection] = useState(false);
 
   // Subscribe to storage changes
   useEffect(() => {
@@ -59,6 +64,11 @@ function App() {
         items: data.currentDay.factItems,
       },
     });
+
+    // Check if we should show reflection
+    if (storage.shouldShowReflection()) {
+      setShowReflection(true);
+    }
 
     // Subscribe to future changes
     const unsubscribe = storage.subscribe(() => {
@@ -138,20 +148,15 @@ function App() {
       completedTime: new Date(),
     };
 
-    // Calculate XP
-    let basePoints = 0;
-    switch (completedItem.taskQuality) {
-      case 'A': basePoints = 8; break;
-      case 'B': basePoints = 4; break;
-      case 'C': basePoints = 2; break;
-      case 'D': basePoints = 1; break;
-    }
-    if (isPure) basePoints += 3;
-    if (completedItem.priority === 1) basePoints += 3;
-    else if (completedItem.priority === 2) basePoints += 1;
-    
-    const timeMultiplier = Math.floor(1 + actualDuration / 60);
-    const xpValue = basePoints * timeMultiplier;
+    const xpValue = calculateXP(
+      completedItem.taskQuality,
+      completedItem.timeQuality || 'not-pure',
+      completedItem.priority,
+      completedItem.columnOrigin,
+      actualDuration,
+      Number(completedItem.estimatedMinutes),
+      false // hasReflection is always false for now
+    );
     completedItem.xpValue = xpValue;
 
     storage.removePlanItem(activeTimer.id);
@@ -192,17 +197,36 @@ function App() {
     if (window.confirm('Are you sure you want to start a new day? This will clear today\'s data and subtract today\'s XP from your total.')) {
       storage.transitionToNewDay(false);
     }
+    setIsMenuOpen(false);
   };
 
   const handleClearData = () => {
     if (window.confirm('Are you sure you want to clear ALL data? This cannot be undone!')) {
       storage.clearAllData();
     }
+    setIsMenuOpen(false);
+  };
+
+  const handleStatistics = () => {
+    // TODO: Implement statistics view
+    setIsMenuOpen(false);
+  };
+
+  const handleReflectionSubmit = (reflection: string) => {
+    storage.addReflection(reflection);
+    setShowReflection(false);
   };
 
   return (
     <div className="container">
-      <Header stats={stats} />
+      <div className="top-bar">
+        <button className="menu-button" onClick={() => setIsMenuOpen(true)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <Header stats={stats} />
+      </div>
       <Dashboard stats={stats} />
       <div className="columns-container">
         <Column 
@@ -217,10 +241,6 @@ function App() {
           onItemToggle={() => {}}
           columnId="fact"
         />
-      </div>
-      <div className="bottom-actions">
-        <button onClick={handleNewDay} className="new-day-button">New Day</button>
-        <button onClick={handleClearData} className="clear-data-button">Clear All Data</button>
       </div>
       {showAddPopup && (
         <AddItemPopup
@@ -241,6 +261,24 @@ function App() {
           onDelete={handleFailureDelete}
           onRepeat={handleFailureRepeat}
           onClose={() => setFailedItem(null)}
+        />
+      )}
+      <Menu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onNewDay={handleNewDay}
+        onClearData={handleClearData}
+        onStatistics={handleStatistics}
+      />
+      {showReflection && (
+        <DailyReflectionPopup
+          onConfirm={handleReflectionSubmit}
+          onClose={() => setShowReflection(false)}
+          stats={{
+            todayXP: stats.todayXP,
+            todayMinutes: stats.todayMinutes,
+            todayPureMinutes: stats.todayPureMinutes,
+          }}
         />
       )}
     </div>

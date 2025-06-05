@@ -20,16 +20,38 @@ const Timer: React.FC<TimerProps> = ({ item, onFail, onFinish, onClose }) => {
   const [startTime] = useState(new Date());
   const [totalPausedTime, setTotalPausedTime] = useState(0);
   const [pauseStartTime, setPauseStartTime] = useState<number | null>(null);
+  const [lastTickTime, setLastTickTime] = useState(Date.now());
 
   useEffect(() => {
     if (!isRunning) return;
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden, store the current time
+        setLastTickTime(Date.now());
+      } else {
+        // Page is visible again, calculate missed time
+        const now = Date.now();
+        const missedTime = Math.floor((now - lastTickTime) / 1000);
+        setRemainingTime(prev => prev - missedTime);
+        setLastTickTime(now);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     const timer = setInterval(() => {
-      setRemainingTime(prev => prev - 1);
+      const now = Date.now();
+      const elapsed = Math.floor((now - lastTickTime) / 1000);
+      setLastTickTime(now);
+      setRemainingTime(prev => prev - elapsed);
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [isRunning]);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isRunning, lastTickTime]);
 
   const formatTime = (seconds: number) => {
     const isNegative = seconds < 0;
@@ -47,6 +69,7 @@ const Timer: React.FC<TimerProps> = ({ item, onFail, onFinish, onClose }) => {
 
   const handleContinue = () => {
     setIsRunning(true);
+    setLastTickTime(Date.now());
     if (pauseStartTime) {
       setTotalPausedTime(prev => prev + (Date.now() - pauseStartTime));
     }

@@ -10,14 +10,14 @@ export interface DayData {
     dayMinutes: number;
     dayPureMinutes: number;
   };
+  reflection?: string;
 }
 
 export interface Records {
-  highestTaskXP: number;
-  longestPureStreak: number;
-  mostPureTimeInDay: number;
-  mostWorkTimeInDay: number;
   highestDayXP: number;
+  mostWorkTimeInDay: number;
+  mostPureTimeInDay: number;
+  highestTaskXP: number;
 }
 
 export interface StorageData {
@@ -25,7 +25,8 @@ export interface StorageData {
   currentLevel: number;
   nextLevelXP: number;
   streak: number;
-  records: Records;
-  days: DayData[];
   currentDay: DayData;
+  days: DayData[];
+  records: Records;
+  lastReflectionPrompt?: string; // Date string when the last reflection was prompted
 } 

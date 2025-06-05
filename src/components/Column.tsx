@@ -19,7 +19,7 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
       }
       return a.taskQuality.localeCompare(b.taskQuality);
     }
-    return 0;
+    return new Date(b.completedTime || 0).getTime() - new Date(a.completedTime || 0).getTime();
   });
 
   const formatDate = (date: Date) => {
@@ -81,6 +81,32 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
     }
   };
 
+  const getUnaccountedMinutes = (currentItem: ColumnItem, index: number) => {
+    if (columnId !== 'fact' || !currentItem.completedTime) return null;
+
+    const currentTime = new Date(currentItem.completedTime);
+    let previousTime: Date;
+
+    if (index === sortedItems.length - 1) {
+      // For the last item (earliest in the day), compare with 4:00
+      previousTime = new Date(currentTime);
+      previousTime.setHours(4, 0, 0, 0);
+      if (previousTime > currentTime) {
+        previousTime.setDate(previousTime.getDate() - 1);
+      }
+    } else {
+      const nextItem = sortedItems[index + 1];
+      if (!nextItem.completedTime) return null;
+      previousTime = new Date(nextItem.completedTime);
+    }
+
+    const diffMinutes = Math.floor((currentTime.getTime() - previousTime.getTime()) / (1000 * 60));
+    const accountedMinutes = currentItem.actualDuration || 0;
+    const unaccountedMinutes = diffMinutes - accountedMinutes;
+
+    return unaccountedMinutes > 0 ? unaccountedMinutes : null;
+  };
+
   return (
     <div className="column">
       <div className="column-header">
@@ -94,37 +120,47 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
       </div>
       <div className="column-items">
         {sortedItems.map((item: ColumnItem, index) => (
-          <div 
-            key={item.id} 
-            className={`column-item ${item.completed ? 'completed' : ''} 
-              ${columnId === 'plan' && index === 0 ? 'top-priority' : ''}
-              ${columnId === 'fact' && item.timeQuality === 'pure' ? 'pure-time' : ''}
-              ${columnId === 'fact' && (item.priority === 1 || item.priority === 2) ? 'high-priority' : ''}`}
-            onClick={() => handleItemClick(item)}
-          >
-            <div className="item-block">
-              <div className="item-header">
-                <span className="item-name">
-                  <span className="item-priority">#{item.priority}</span>
-                  <span className="item-separator">-</span>
-                  <span className="item-quality">{item.taskQuality}</span>
-                </span>
-                <span className="item-description">: {item.description}</span>
+          <React.Fragment key={item.id}>
+            {columnId === 'fact' && (
+              <div className="unaccounted-time">
+                {getUnaccountedMinutes(item, index) !== null && (
+                  <div className="unaccounted-minutes">
+                    Unaccounted: {getUnaccountedMinutes(item, index)}m
+                  </div>
+                )}
+              </div>
+            )}
+            <div 
+              className={`column-item ${item.completed ? 'completed' : ''} 
+                ${columnId === 'plan' && index === 0 ? 'top-priority' : ''}
+                ${columnId === 'fact' && item.timeQuality === 'pure' ? 'pure-time' : ''}
+                ${columnId === 'fact' && (item.priority === 1 || item.priority === 2) ? 'high-priority' : ''}`}
+              onClick={() => handleItemClick(item)}
+            >
+              <div className="item-block">
+                <div className="item-header">
+                  <span className="item-name">
+                    <span className="item-priority">#{item.priority}</span>
+                    <span className="item-separator">-</span>
+                    <span className="item-quality">{item.taskQuality}</span>
+                  </span>
+                  <span className="item-description">: {item.description}</span>
+                </div>
+              </div>
+              <div className="item-block">
+                {columnId === 'plan' ? (
+                  <div className="item-details">
+                    <span>{item.estimatedMinutes}m - {item.timeType}</span>
+                  </div>
+                ) : (
+                  <div className="item-details">
+                    <div>{item.actualDuration}m/{item.estimatedMinutes}m - {item.completedTime && formatDate(new Date(item.completedTime))}</div>
+                    <div className="xp-value">+{item.xpValue} XP</div>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="item-block">
-              {columnId === 'plan' ? (
-                <div className="item-details">
-                  <span>{item.estimatedMinutes}m - {item.timeType}</span>
-                </div>
-              ) : (
-                <div className="item-details">
-                  <div>{item.actualDuration}m/{item.estimatedMinutes}m - {item.completedTime && new Date(item.completedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                  <div className="xp-value">+{item.xpValue} XP</div>
-                </div>
-              )}
-            </div>
-          </div>
+          </React.Fragment>
         ))}
       </div>
       {selectedItem && (

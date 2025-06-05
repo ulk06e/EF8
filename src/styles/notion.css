@@ -699,4 +699,133 @@ textarea.full-width {
 
 .xp-display:hover {
   background: white;
+}
+
+.unaccounted-time {
+  padding: 4px 8px;
+  margin-bottom: 8px;
+}
+
+.unaccounted-minutes {
+  font-size: 14px;
+  color: #e67e22;
+  font-style: italic;
+}
+
+/* Menu styles */
+.menu-button {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  margin-right: 12px;
+}
+
+.menu-button svg {
+  width: 24px;
+  height: 24px;
+  color: var(--notion-text);
+}
+
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.menu-content {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  background: white;
+  padding: 24px;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.menu-content h2 {
+  margin: 0 0 24px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.menu-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.menu-item {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  background: white;
+  color: var(--notion-text);
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+  background: var(--notion-hover);
+}
+
+.menu-item.danger {
+  color: #e74c3c;
+}
+
+.menu-item.danger:hover {
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--notion-border);
+}
+
+/* Reflection popup styles */
+.reflection-stats {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f7f7f7;
+  border-radius: 4px;
+}
+
+.reflection-stats p {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+}
+
+.reflection-stats ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.reflection-stats li {
+  margin: 4px 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
 } 
