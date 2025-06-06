@@ -1,8 +1,12 @@
 import { StorageData, DayData, Records } from '../types/storage';
-import { ColumnItem } from '../types';
+import { ColumnItem, Stats } from '../types';
 
 const STORAGE_KEY = 'plan_tracker_data';
 const DAY_START_HOUR = 4;
+
+const isSameDay = (date1: Date, date2: Date): boolean => {
+  return date1.toDateString() === date2.toDateString();
+};
 
 const calculateNextLevelXP = (level: number): number => {
   if (level <= 5) {
@@ -29,11 +33,14 @@ const createNewDay = (): DayData => {
     date: now.toISOString(),
     planItems: [],
     factItems: [],
+    prePlanItems: [],
     stats: {
       dayXP: 0,
       dayMinutes: 0,
       dayPureMinutes: 0,
+      planAdherence: 0,
     },
+    reflection: undefined,
   };
 };
 
@@ -69,9 +76,56 @@ class StorageService {
     }
 
     const data = JSON.parse(savedData);
+    
+    // Ensure currentDay exists and has all required fields
     data.currentDay = this.ensureCurrentDay(data.currentDay);
+    
+    // Convert dates in current day items
+    if (data.currentDay.planItems) {
+      data.currentDay.planItems = data.currentDay.planItems.map(this.convertDatesInItem);
+    }
+    if (data.currentDay.factItems) {
+      data.currentDay.factItems = data.currentDay.factItems.map(this.convertDatesInItem);
+    }
+    if (data.currentDay.prePlanItems) {
+      data.currentDay.prePlanItems = data.currentDay.prePlanItems.map(this.convertDatesInItem);
+    }
+    
+    // Ensure days array exists and all days have required fields
+    if (!data.days) data.days = [];
+    data.days = data.days.map((day: DayData) => {
+      if (!day.prePlanItems) day.prePlanItems = [];
+      if (!day.planItems) day.planItems = [];
+      if (!day.factItems) day.factItems = [];
+      
+      // Convert dates in historical items
+      day.planItems = day.planItems.map(this.convertDatesInItem);
+      day.factItems = day.factItems.map(this.convertDatesInItem);
+      day.prePlanItems = day.prePlanItems.map(this.convertDatesInItem);
+      
+      if (!day.stats) {
+        day.stats = {
+          dayXP: 0,
+          dayMinutes: 0,
+          dayPureMinutes: 0,
+          planAdherence: 0,
+        };
+      }
+      if (!day.stats.planAdherence) day.stats.planAdherence = 0;
+      return day;
+    });
+
     return data;
   }
+
+  private convertDatesInItem = (item: ColumnItem): ColumnItem => {
+    return {
+      ...item,
+      createdTime: new Date(item.createdTime),
+      completedTime: item.completedTime ? new Date(item.completedTime) : undefined,
+      plannedDate: item.plannedDate ? new Date(item.plannedDate) : undefined
+    };
+  };
 
   private ensureCurrentDay(currentDay: DayData | null): DayData {
     if (!currentDay) return createNewDay();
@@ -201,15 +255,37 @@ class StorageService {
   }
 
   public addPlanItem(item: ColumnItem): void {
-    // Ensure estimatedMinutes is a number when storing
+    const now = new Date();
+    const today = new Date();
+    // If it's before 4 AM, consider it as the previous day
+    if (now.getHours() < 4) {
+      today.setDate(today.getDate() - 1);
+    }
+
     const processedItem = {
       ...item,
       estimatedMinutes: typeof item.estimatedMinutes === 'string'
         ? parseInt(item.estimatedMinutes)
-        : item.estimatedMinutes
+        : item.estimatedMinutes,
+      plannedDate: today, // Use today's date (adjusted for 4 AM cutoff)
+      wasPrePlanned: false,
+      columnOrigin: 'plan' as const,
+      creationColumn: 'plan' as const
     };
     
     this.data.currentDay.planItems.push(processedItem);
+    
+    // Add to pre-planned items for today's date
+    const prePlanItem = {
+      ...processedItem,
+      columnOrigin: 'pre-plan' as const
+    };
+    
+    // Only add to prePlanItems if it doesn't already exist
+    if (!this.data.currentDay.prePlanItems.some(i => i.id === processedItem.id)) {
+      this.data.currentDay.prePlanItems.push(prePlanItem);
+    }
+    
     this.saveData();
   }
 
@@ -229,10 +305,29 @@ class StorageService {
     this.saveData();
   }
 
+  private calculatePlanAdherence(): number {
+    const now = new Date();
+    const today = new Date();
+    
+    // If it's before 4 AM, consider it as the previous day
+    if (now.getHours() < 4) {
+      today.setDate(today.getDate() - 1);
+    }
+
+    const completedPrePlanned = this.data.currentDay.factItems.filter(item => item.wasPrePlanned).length;
+    const totalPrePlanned = this.data.currentDay.prePlanItems.filter(item => 
+      item.plannedDate && isSameDay(new Date(item.plannedDate), today)
+    ).length;
+    
+    if (totalPrePlanned === 0) return 0;
+    return Math.round((completedPrePlanned / totalPrePlanned) * 100);
+  }
+
   public updateStats(minutes: number, pureDuration: number): void {
     const stats = this.data.currentDay.stats;
     stats.dayMinutes += minutes;
     stats.dayPureMinutes += pureDuration;
+    stats.planAdherence = this.calculatePlanAdherence();
     this.saveData();
   }
 
@@ -291,6 +386,116 @@ class StorageService {
       this.saveData();
       this.notifyListeners();
     }
+  }
+
+  // New methods for pre-planned items
+  getPrePlannedItems(date: Date): ColumnItem[] {
+    const now = new Date();
+    const today = new Date();
+    
+    // If it's before 4 AM, consider it as the previous day
+    if (now.getHours() < 4) {
+      today.setDate(today.getDate() - 1);
+    }
+
+    // Ensure prePlanItems exists in currentDay
+    if (!this.data.currentDay.prePlanItems) {
+      this.data.currentDay.prePlanItems = [];
+    }
+
+    // If the date is today, merge pre-planned items with plan items
+    if (isSameDay(date, today)) {
+      const items = [
+        ...this.data.currentDay.prePlanItems,
+        ...this.data.currentDay.planItems,
+      ];
+      // Remove duplicates based on id
+      return Array.from(new Map(items.map(item => [item.id, item])).values());
+    }
+
+    // For past days, get from history
+    const pastDay = this.data.days.find(day => {
+      const dayDate = new Date(day.date);
+      return isSameDay(dayDate, date);
+    });
+    
+    if (pastDay) {
+      // Ensure prePlanItems exists in pastDay
+      if (!pastDay.prePlanItems) {
+        pastDay.prePlanItems = [];
+      }
+      const items = [...pastDay.prePlanItems, ...pastDay.planItems];
+      // Remove duplicates based on id
+      return Array.from(new Map(items.map(item => [item.id, item])).values());
+    }
+
+    // For future days, get only pre-planned items
+    return this.data.currentDay.prePlanItems.filter(item => {
+      if (!item.plannedDate) return false;
+      const itemDate = new Date(item.plannedDate);
+      return isSameDay(itemDate, date);
+    });
+  }
+
+  public addPrePlannedItem(item: ColumnItem) {
+    const now = new Date();
+    const today = new Date();
+    // If it's before 4 AM, consider it as the previous day
+    if (now.getHours() < 4) {
+      today.setDate(today.getDate() - 1);
+    }
+
+    const itemDate = item.plannedDate ? new Date(item.plannedDate) : undefined;
+    const processedItem = {
+      ...item,
+      estimatedMinutes: typeof item.estimatedMinutes === 'string'
+        ? parseInt(item.estimatedMinutes)
+        : item.estimatedMinutes,
+      wasPrePlanned: true,
+      plannedDate: itemDate,
+      createdTime: new Date(item.createdTime),
+      columnOrigin: 'pre-plan' as const,
+      creationColumn: 'pre-plan' as const
+    };
+
+    // Add to pre-planned items if it doesn't already exist
+    if (!this.data.currentDay.prePlanItems.some(i => i.id === processedItem.id)) {
+      this.data.currentDay.prePlanItems.push(processedItem);
+    }
+
+    // If the task is for today, also add it to plan items if it's not already there
+    if (itemDate && isSameDay(itemDate, today)) {
+      if (!this.data.currentDay.planItems.some(i => i.id === processedItem.id)) {
+        const planItem = {
+          ...processedItem,
+          columnOrigin: 'plan' as const
+        };
+        this.data.currentDay.planItems.push(planItem);
+      }
+    }
+    
+    this.saveData();
+  }
+
+  removePrePlannedItem(itemId: string) {
+    this.data.currentDay.prePlanItems = this.data.currentDay.prePlanItems.filter(
+      item => item.id !== itemId
+    );
+    this.saveData();
+  }
+
+  updatePrePlannedItem(updatedItem: ColumnItem) {
+    const processedItem = {
+      ...updatedItem,
+      plannedDate: updatedItem.plannedDate ? new Date(updatedItem.plannedDate) : undefined,
+      createdTime: new Date(updatedItem.createdTime),
+      completedTime: updatedItem.completedTime ? new Date(updatedItem.completedTime) : undefined
+    };
+    
+    this.data.currentDay.prePlanItems = this.data.currentDay.prePlanItems.map(item =>
+      item.id === processedItem.id ? processedItem : item
+    );
+    this.saveData();
   }
 }
 

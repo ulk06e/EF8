@@ -274,6 +274,28 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
         </div>
       </div>
 
+      <div className="stats-section">
+        <h3>Plan Adherence</h3>
+        <div className="adherence-chart">
+          <div className="adherence-bar">
+            <div 
+              className="adherence-fill" 
+              style={{ width: `${data.currentDay.stats.planAdherence}%` }}
+            />
+            <span className="adherence-label">
+              {Math.round(data.currentDay.stats.planAdherence)}%
+            </span>
+          </div>
+          <p className="adherence-description">
+            {data.currentDay.stats.planAdherence}% of pre-planned tasks completed today
+            <br />
+            <small>
+              (Tasks marked as completed from your pre-planned tasks for today)
+            </small>
+          </p>
+        </div>
+      </div>
+
       <div className="stats-section charts">
         <h3>XP Over Time (Last 7 Days)</h3>
         <div className="chart">
@@ -383,6 +405,7 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
                 <div>XP: {selectedDay.xp}</div>
                 <div>Time Tracked: {selectedDay.minutes}m</div>
                 <div>Unaccounted Time: {selectedDay.unaccountedMinutes}m</div>
+                <div>Plan Adherence: {Math.round(data.currentDay.stats.planAdherence)}%</div>
               </div>
               <div className="day-tasks">
                 <h4>Completed Tasks</h4>

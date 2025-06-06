@@ -9,6 +9,7 @@ export interface Stats {
   todayPureMinutes: number;
   bestPureMinutes: number;
   streak: number;
+  planAdherence: number;
 }
 
 export type TimeType = 'to-goal' | 'to-time';
@@ -18,12 +19,15 @@ export type TimeQuality = 'pure' | 'not-pure';
 export interface ColumnItem extends AddItemFormData {
   id: string;
   completed: boolean;
-  columnOrigin: 'plan' | 'fact';
+  columnOrigin: 'plan' | 'fact' | 'pre-plan';
+  creationColumn: 'plan' | 'pre-plan';
   xpValue: number;
   createdTime: Date;
   completedTime?: Date;
   actualDuration?: number;
   timeQuality?: 'pure' | 'not-pure';
+  wasPrePlanned?: boolean;
+  plannedDate?: Date;
 }
 
 export interface Column {
@@ -37,4 +41,16 @@ export interface AddItemFormData {
   taskQuality: TaskQuality;
   estimatedMinutes: string | number;
   priority: number;
+}
+
+export interface DayStats {
+  totalMinutes: number;
+  completedPrePlannedTasks: number;
+  totalPrePlannedTasks: number;
+}
+
+export interface WeekDay {
+  date: Date;
+  totalMinutes: number;
+  items: ColumnItem[];
 } 

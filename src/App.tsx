@@ -26,6 +26,7 @@ function App() {
     todayPureMinutes: 0,
     bestPureMinutes: 0,
     streak: 0,
+    planAdherence: 0,
   });
 
   const [columns, setColumns] = useState<{ [key: string]: ColumnType }>({
@@ -56,6 +57,7 @@ function App() {
       todayPureMinutes: data.currentDay.stats.dayPureMinutes,
       bestPureMinutes: data.records.mostPureTimeInDay,
       streak: data.streak,
+      planAdherence: data.currentDay.stats.planAdherence,
     });
 
     setColumns({
@@ -88,6 +90,7 @@ function App() {
         todayPureMinutes: updatedData.currentDay.stats.dayPureMinutes,
         bestPureMinutes: updatedData.records.mostPureTimeInDay,
         streak: updatedData.streak,
+        planAdherence: updatedData.currentDay.stats.planAdherence,
       });
 
       setColumns({
@@ -116,6 +119,7 @@ function App() {
       ...data,
       completed: false,
       columnOrigin: 'plan',
+      creationColumn: 'plan',
       xpValue: 0,
       createdTime: new Date(),
     };

@@ -1,15 +1,19 @@
 import { ColumnItem } from './index';
 
+export interface DayStats {
+  dayXP: number;
+  dayMinutes: number;
+  dayPureMinutes: number;
+  planAdherence: number;
+}
+
 export interface DayData {
   id: string;
   date: string;
   planItems: ColumnItem[];
   factItems: ColumnItem[];
-  stats: {
-    dayXP: number;
-    dayMinutes: number;
-    dayPureMinutes: number;
-  };
+  prePlanItems: ColumnItem[];
+  stats: DayStats;
   reflection?: string;
 }
 
