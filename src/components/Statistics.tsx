@@ -275,7 +275,7 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
       </div>
 
       <div className="stats-section">
-        <h3>Plan Adherence</h3>
+        <h3>Plan Adherence / week</h3>
         <div className="adherence-chart">
           <div className="adherence-bar">
             <div 
@@ -286,13 +286,6 @@ const Statistics: React.FC<StatisticsProps> = ({ data, onClose }) => {
               {Math.round(data.currentDay.stats.planAdherence)}%
             </span>
           </div>
-          <p className="adherence-description">
-            {data.currentDay.stats.planAdherence}% of pre-planned tasks completed today
-            <br />
-            <small>
-              (Tasks marked as completed from your pre-planned tasks for today)
-            </small>
-          </p>
         </div>
       </div>
 

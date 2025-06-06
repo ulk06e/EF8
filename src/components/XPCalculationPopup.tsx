@@ -8,10 +8,10 @@ interface XPCalculationPopupProps {
 }
 
 const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }) => {
-  const baseXP = Math.floor(item.actualDuration! / 30);
+  const baseXP = Math.floor(item.actualDuration! / 20);
   const qualityMultiplier = { A: 4, B: 3, C: 2, D: 1 }[item.taskQuality];
   const timeQualityMultiplier = item.timeQuality === 'pure' ? 1.5 : 1;
-  const priorityMultiplier = { 1: 1.5, 2: 1.4, 3: 1.3 }[item.priority] || 1;
+  const priorityMultiplier = { 1: 1.5, 2: 1.4, 3: 1.3, 7: 1.5, 8: 1.4, 9: 1.3, 10: 1.2 }[item.priority] || 1;
   const prePlannedMultiplier = item.wasPrePlanned ? 1.3 : 1;
   
   const estimatedMinutes = typeof item.estimatedMinutes === 'string' 
@@ -27,7 +27,7 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
         <h3>XP Calculation</h3>
         <div className="xp-breakdown">
           <div className="xp-row">
-            <span>Base XP (1 per 30min)</span>
+            <span>Base XP (1 per 20min)</span>
             <span>{baseXP}</span>
           </div>
           
@@ -43,7 +43,7 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
             </div>
           )}
 
-          {item.priority <= 3 && (
+          {(item.priority <= 3 || item.priority >= 7) && (
             <div className="xp-row multiplier-partial">
               <span>Priority #{item.priority}</span>
               <span>×{priorityMultiplier}</span>
@@ -70,9 +70,6 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
           </div>
         </div>
 
-        <button className="close-button" onClick={onClose}>
-          Close
-        </button>
       </div>
     </div>
   );
@@ -80,6 +77,3 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
 
 export default XPCalculationPopup; 
 
-
-
-  // {timeXP > 0 ? '+' : ''}{timeXP}
