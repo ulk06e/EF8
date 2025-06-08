@@ -28,6 +28,7 @@ export interface ColumnItem extends AddItemFormData {
   timeQuality?: 'pure' | 'not-pure';
   wasPrePlanned?: boolean;
   plannedDate?: Date;
+  date: Date;
 }
 
 export interface Column {
@@ -41,6 +42,7 @@ export interface AddItemFormData {
   taskQuality: TaskQuality;
   estimatedMinutes: string | number;
   priority: number;
+  date: Date;
 }
 
 export interface DayStats {
@@ -53,4 +55,18 @@ export interface WeekDay {
   date: Date;
   totalMinutes: number;
   items: ColumnItem[];
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  currentXP: number;
+  nextLevelXP: number;
+  currentLevel: number;
+  taskIds: string[];
+}
+
+export interface ProjectColumn {
+  title: string;
+  items: Project[];
 } 

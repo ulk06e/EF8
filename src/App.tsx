@@ -8,8 +8,9 @@ import FailurePopup from './components/FailurePopup';
 import Menu from './components/Menu';
 import DailyReflectionPopup from './components/DailyReflectionPopup';
 import Statistics from './components/Statistics';
-import Goals from './components/Goals';
-import { Stats, Column as ColumnType, AddItemFormData, ColumnItem } from './types';
+import WeekColumn from './components/WeekColumn';
+import Projects from './components/Projects';
+import { Stats, Column as ColumnType, AddItemFormData, ColumnItem, Project } from './types';
 import { calculateXP } from './utils/xp';
 import storage from './services/storage';
 import './styles/notion.css';
@@ -40,7 +41,8 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showReflection, setShowReflection] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
-  const [showGoals, setShowGoals] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [projects, setProjects] = useState<Project[]>([]);
 
   // Subscribe to storage changes
   useEffect(() => {
@@ -108,6 +110,14 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+  };
+
+  const handleTodayClick = () => {
+    setSelectedDate(new Date());
+  };
+
   const handleAddClick = () => {
     console.log('handleAddClick called');
     setShowAddPopup(true);
@@ -115,13 +125,14 @@ function App() {
 
   const handlePopupConfirm = (data: AddItemFormData) => {
     const newItem: ColumnItem = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       ...data,
       completed: false,
       columnOrigin: 'plan',
       creationColumn: 'plan',
       xpValue: 0,
       createdTime: new Date(),
+      date: selectedDate,
     };
 
     storage.addPlanItem(newItem);
@@ -168,7 +179,7 @@ function App() {
     completedItem.xpValue = xpValue;
 
     storage.removePlanItem(activeTimer.id);
-    storage.addFactItem(completedItem);
+    storage.addFactItem(completedItem, actualDuration);
     storage.addXP(xpValue);
     storage.updateStats(actualDuration, isPure ? actualDuration : 0);
 
@@ -203,17 +214,10 @@ function App() {
 
   const handleDailyPlanner = () => {
     setShowStatistics(false);
-    setShowGoals(false);
   };
 
   const handleStatistics = () => {
     setShowStatistics(true);
-    setShowGoals(false);
-  };
-
-  const handleSetGoals = () => {
-    setShowGoals(true);
-    setShowStatistics(false);
   };
 
   const handleItemEdit = (item: ColumnItem, formData: AddItemFormData) => {
@@ -247,9 +251,37 @@ function App() {
   };
 
   const getCurrentPage = () => {
-    if (showGoals) return 'goals';
     if (showStatistics) return 'statistics';
     return 'planner';
+  };
+
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getDate() === date2.getDate() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getFullYear() === date2.getFullYear();
+  };
+
+  const filteredColumns = {
+    plan: {
+      ...columns.plan,
+      items: columns.plan.items.filter(item => isSameDay(item.date, selectedDate))
+    },
+    fact: {
+      ...columns.fact,
+      items: columns.fact.items.filter(item => isSameDay(item.date, selectedDate))
+    }
+  };
+
+  const handleAddProject = (name: string) => {
+    const newProject: Project = {
+      id: Date.now().toString(),
+      name,
+      currentXP: 0,
+      nextLevelXP: 100,
+      currentLevel: 1,
+      taskIds: []
+    };
+    setProjects(prev => [...prev, newProject]);
   };
 
   return (
@@ -262,9 +294,7 @@ function App() {
         </button>
         <Header stats={stats} onTitleClick={handleDailyPlanner} />
       </div>
-      {showGoals ? (
-        <Goals stats={stats} />
-      ) : showStatistics ? (
+      {showStatistics ? (
         <Statistics 
           data={storage.getData()} 
           onClose={() => setShowStatistics(false)} 
@@ -272,27 +302,36 @@ function App() {
       ) : (
         <>
           <Dashboard stats={stats} />
+          <Projects onAddProject={handleAddProject} />
           <div className="columns-container">
             <Column 
-              data={columns.plan} 
+              data={filteredColumns.plan} 
               onItemToggle={handleItemToggle}
               onAddClick={handleAddClick}
               onItemClick={handleItemClick}
               onItemEdit={handleItemEdit}
               columnId="plan"
+              selectedDate={selectedDate}
             />
             <Column 
-              data={columns.fact} 
+              data={filteredColumns.fact} 
               onItemToggle={() => {}}
               columnId="fact"
+              selectedDate={selectedDate}
             />
           </div>
+          <WeekColumn
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+            onTodayClick={handleTodayClick}
+          />
         </>
       )}
       {showAddPopup && (
         <AddItemPopup
           onConfirm={handlePopupConfirm}
           onCancel={() => setShowAddPopup(false)}
+          selectedDate={selectedDate}
         />
       )}
       {activeTimer && (
@@ -317,7 +356,6 @@ function App() {
         onClearData={handleClearData}
         onStatistics={handleStatistics}
         onDailyPlanner={handleDailyPlanner}
-        onSetGoals={handleSetGoals}
         currentPage={getCurrentPage()}
       />
       {showReflection && (

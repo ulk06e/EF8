@@ -1,5 +1,5 @@
 import { StorageData, DayData, Records } from '../types/storage';
-import { ColumnItem, Stats } from '../types';
+import { ColumnItem, Stats, AddItemFormData } from '../types/index';
 
 const STORAGE_KEY = 'plan_tracker_data';
 const DAY_START_HOUR = 4;
@@ -123,7 +123,7 @@ class StorageService {
       ...item,
       createdTime: new Date(item.createdTime),
       completedTime: item.completedTime ? new Date(item.completedTime) : undefined,
-      plannedDate: item.plannedDate ? new Date(item.plannedDate) : undefined
+      date: new Date(item.date)
     };
   };
 
@@ -191,33 +191,34 @@ class StorageService {
     }
   }
 
-  public transitionToNewDay(isAutomatic: boolean = false): void {
-    // Save current day to history
+  public transitionToNewDay(shouldSubtractXP: boolean = true): void {
     const currentDay = this.data.currentDay;
-    this.data.days.push(currentDay);
-
-    // Update records
-    this.updateRecords(currentDay);
-
-    // Update streak only on automatic transition at 4 AM
-    if (isAutomatic && currentDay.stats.dayXP > 0) {
-      this.data.streak++;
-    }
-
-    // Subtract XP from total when manually transitioning
-    if (!isAutomatic) {
-      this.data.totalXP -= currentDay.stats.dayXP;
-      // Adjust level if needed
-      while (this.data.totalXP < calculatePreviousLevelXP(this.data.currentLevel)) {
-        this.data.currentLevel--;
-        this.data.nextLevelXP = calculateNextLevelXP(this.data.currentLevel);
-      }
-    }
-
-    // Create new day
+    
+    // Create new day data
     const newDay = createNewDay();
+    
+    // Move current day to history
+    this.data.days.unshift(currentDay);
+    
+    // Reset current day
     this.data.currentDay = newDay;
+    
+    // Move any planned items to the new day
+    const today = new Date();
+    this.data.currentDay.planItems = currentDay.planItems
+      .filter(item => !item.completed)
+      .map(item => ({
+        ...item,
+        date: today
+      }));
+    
+    // Subtract today's XP if requested
+    if (shouldSubtractXP) {
+      this.data.totalXP = Math.max(0, this.data.totalXP - currentDay.stats.dayXP);
+    }
+    
     this.saveData();
+    this.notifyListeners();
   }
 
   private updateRecords(day: DayData): void {
@@ -254,39 +255,25 @@ class StorageService {
     this.saveData();
   }
 
-  public addPlanItem(item: ColumnItem): void {
-    const now = new Date();
-    const today = new Date();
-    // If it's before 4 AM, consider it as the previous day
-    if (now.getHours() < 4) {
-      today.setDate(today.getDate() - 1);
-    }
-
-    const processedItem = {
+  public addPlanItem(item: AddItemFormData) {
+    const processedItem: ColumnItem = {
       ...item,
-      estimatedMinutes: typeof item.estimatedMinutes === 'string'
-        ? parseInt(item.estimatedMinutes)
-        : item.estimatedMinutes,
-      plannedDate: today, // Use today's date (adjusted for 4 AM cutoff)
-      wasPrePlanned: false,
-      columnOrigin: 'plan' as const,
-      creationColumn: 'plan' as const
+      id: crypto.randomUUID(),
+      completed: false,
+      columnOrigin: 'plan',
+      creationColumn: 'plan',
+      xpValue: 0,
+      createdTime: new Date(),
+      date: new Date(item.date),
+      timeType: item.timeType,
+      estimatedMinutes: typeof item.estimatedMinutes === 'string' 
+        ? parseInt(item.estimatedMinutes) 
+        : item.estimatedMinutes
     };
     
     this.data.currentDay.planItems.push(processedItem);
-    
-    // Add to pre-planned items for today's date
-    const prePlanItem = {
-      ...processedItem,
-      columnOrigin: 'pre-plan' as const
-    };
-    
-    // Only add to prePlanItems if it doesn't already exist
-    if (!this.data.currentDay.prePlanItems.some(i => i.id === processedItem.id)) {
-      this.data.currentDay.prePlanItems.push(prePlanItem);
-    }
-    
     this.saveData();
+    this.notifyListeners();
   }
 
   public removePlanItem(itemId: string): void {
@@ -296,13 +283,31 @@ class StorageService {
     this.saveData();
   }
 
-  public addFactItem(item: ColumnItem): void {
-    this.data.currentDay.factItems.unshift(item); // Add to top
-    this.data.records.highestTaskXP = Math.max(
-      this.data.records.highestTaskXP,
-      item.xpValue
-    );
+  public addFactItem(item: ColumnItem, actualDuration: number) {
+    const processedItem: ColumnItem = {
+      ...item,
+      id: crypto.randomUUID(),
+      completed: true,
+      columnOrigin: item.columnOrigin,
+      creationColumn: item.creationColumn,
+      actualDuration,
+      completedTime: new Date(),
+      createdTime: new Date(),
+      date: item.date,
+      timeType: item.timeType,
+      xpValue: this.calculateXP(
+        item.taskQuality,
+        item.timeQuality || 'not-pure',
+        item.priority,
+        item.columnOrigin,
+        actualDuration,
+        Number(item.estimatedMinutes)
+      )
+    };
+    
+    this.data.currentDay.factItems.push(processedItem);
     this.saveData();
+    this.notifyListeners();
   }
 
   private calculatePlanAdherence(): number {
@@ -496,6 +501,47 @@ class StorageService {
       item.id === processedItem.id ? processedItem : item
     );
     this.saveData();
+  }
+
+  private calculateXP(
+    taskQuality: string,
+    timeQuality: string,
+    priority: number,
+    columnOrigin: string,
+    actualDuration: number,
+    estimatedMinutes: number
+  ): number {
+    let basePoints = 0;
+    
+    // Task quality points
+    switch (taskQuality) {
+      case 'A': basePoints = 8; break;
+      case 'B': basePoints = 4; break;
+      case 'C': basePoints = 2; break;
+      case 'D': basePoints = 1; break;
+    }
+
+    // Pure time bonus
+    if (timeQuality === 'pure') {
+      basePoints += 3;
+    }
+
+    // Priority bonus
+    if (priority <= 3) {
+      basePoints += 3;
+    } else if (priority <= 6) {
+      basePoints += 1;
+    }
+
+    // Plan bonus
+    if (columnOrigin === 'plan') {
+      basePoints += 2;
+    }
+
+    // Time multiplier
+    const timeMultiplier = Math.floor(1 + actualDuration / 60);
+    
+    return basePoints * timeMultiplier;
   }
 }
 

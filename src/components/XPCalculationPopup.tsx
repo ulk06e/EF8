@@ -76,4 +76,3 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
 };
 
 export default XPCalculationPopup; 
-

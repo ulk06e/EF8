@@ -8,67 +8,52 @@ interface MenuProps {
   onClearData: () => void;
   onStatistics: () => void;
   onDailyPlanner: () => void;
-  onSetGoals: () => void;
-  currentPage: 'planner' | 'goals' | 'statistics';
+  currentPage: 'statistics' | 'planner';
 }
 
-const Menu: React.FC<MenuProps> = ({ 
-  isOpen, 
-  onClose, 
-  onNewDay, 
-  onClearData, 
+const Menu: React.FC<MenuProps> = ({
+  isOpen,
+  onClose,
+  onNewDay,
+  onClearData,
   onStatistics,
   onDailyPlanner,
-  onSetGoals,
-  currentPage
+  currentPage,
 }) => {
-  const handleMenuItemClick = (action: () => void) => {
-    action();
-    onClose();
-  };
+  if (!isOpen) return null;
 
   return (
-    <>
-      {isOpen && (
-        <div className="menu-overlay" onClick={onClose}>
-          <div className="menu-content" onClick={e => e.stopPropagation()}>
-            <h2>Menu</h2>
-            <div className="menu-items">
-              <button 
-                onClick={() => handleMenuItemClick(onDailyPlanner)} 
-                className={`menu-item ${currentPage === 'planner' ? 'active' : ''}`}
-              >
-                Daily Planner
-              </button>
-              <button 
-                onClick={() => handleMenuItemClick(onSetGoals)} 
-                className={`menu-item ${currentPage === 'goals' ? 'active' : ''}`}
-              >
-                Set Goals
-              </button>
-              <button 
-                onClick={() => handleMenuItemClick(onStatistics)} 
-                className={`menu-item ${currentPage === 'statistics' ? 'active' : ''}`}
-              >
-                Statistics
-              </button>
-              <button 
-                onClick={() => handleMenuItemClick(onNewDay)} 
-                className="menu-item danger"
-              >
-                New Day
-              </button>
-              <button 
-                onClick={() => handleMenuItemClick(onClearData)} 
-                className="menu-item danger"
-              >
-                Clear All Data
-              </button>
-            </div>
-          </div>
+    <div className="menu-overlay" onClick={onClose}>
+      <div className="menu-content" onClick={e => e.stopPropagation()}>
+        <h2>Menu</h2>
+        <div className="menu-items">
+          <button
+            className={`menu-item ${currentPage === 'planner' ? 'active' : ''}`}
+            onClick={() => {
+              onDailyPlanner();
+              onClose();
+            }}
+          >
+            Daily Planner
+          </button>
+          <button
+            className={`menu-item ${currentPage === 'statistics' ? 'active' : ''}`}
+            onClick={() => {
+              onStatistics();
+              onClose();
+            }}
+          >
+            Statistics
+          </button>
+          <button className="menu-item" onClick={onNewDay}>
+            Start New Day
+          </button>
+          <button className="menu-item danger" onClick={onClearData}>
+            Clear All Data
+          </button>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 };
 

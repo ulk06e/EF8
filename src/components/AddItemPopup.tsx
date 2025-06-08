@@ -1,39 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { TimeType, TaskQuality, AddItemFormData, ColumnItem } from '../types';
+import { TimeType, TaskQuality, AddItemFormData, ColumnItem } from '../types/index';
 import '../styles/notion.css';
 
 interface AddItemPopupProps {
   onConfirm: (data: AddItemFormData) => void;
   onCancel: () => void;
   initialData?: ColumnItem;
+  selectedDate: Date;
 }
 
-const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initialData }) => {
+const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initialData, selectedDate }) => {
   const [formData, setFormData] = useState<AddItemFormData>({
-    description: '',
-    timeType: 'to-goal',
-    taskQuality: 'A',
-    estimatedMinutes: '',
-    priority: 1,
+    description: initialData?.description || '',
+    timeType: initialData?.timeType || 'to-goal',
+    taskQuality: initialData?.taskQuality as TaskQuality || 'C',
+    estimatedMinutes: initialData?.estimatedMinutes || '',
+    priority: initialData?.priority || 3,
+    date: selectedDate,
   });
 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        description: initialData.description,
+        description: initialData.description || '',
         timeType: initialData.timeType,
-        taskQuality: initialData.taskQuality,
+        taskQuality: initialData.taskQuality as TaskQuality,
         estimatedMinutes: initialData.estimatedMinutes,
         priority: initialData.priority,
+        date: initialData.date,
       });
     }
   }, [initialData]);
+
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      date: selectedDate
+    }));
+  }, [selectedDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onConfirm({
       ...formData,
-      estimatedMinutes: parseInt(formData.estimatedMinutes as string) || 0
+      estimatedMinutes: parseInt(formData.estimatedMinutes.toString()) || 0,
+      priority: typeof formData.priority === 'string' ? parseInt(formData.priority) : formData.priority,
+      date: selectedDate
+    });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -42,7 +62,9 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initia
       if (e.target === e.currentTarget) onCancel();
     }}>
       <div className="popup-content" onClick={e => e.stopPropagation()}>
-        <h2 className="popup-title">{initialData ? 'Edit Task' : 'Create a Task'}</h2>
+        <h2 className="popup-title">
+          {initialData ? 'Edit Task' : 'Create a Task'} for {formatDate(selectedDate)}
+        </h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <textarea
@@ -53,7 +75,7 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initia
               className="full-width"
             />
           </div>
-          
+
           <div className="form-row">
             <select
               value={formData.timeType}
@@ -114,4 +136,4 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initia
   );
 };
 
-export default AddItemPopup; 
+export default AddItemPopup;

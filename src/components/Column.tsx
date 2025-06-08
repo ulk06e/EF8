@@ -10,9 +10,10 @@ interface ColumnProps {
   columnId: string;
   onItemClick?: (item: ColumnItem) => void;
   onItemEdit?: (item: ColumnItem, formData: AddItemFormData) => void;
+  selectedDate: Date;
 }
 
-const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnId, onItemClick, onItemEdit }) => {
+const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnId, onItemClick, onItemEdit, selectedDate }) => {
   const [selectedItem, setSelectedItem] = useState<ColumnItem | null>(null);
   const [showXPCalculation, setShowXPCalculation] = useState<ColumnItem | null>(null);
   const [editingItem, setEditingItem] = useState<ColumnItem | null>(null);
@@ -20,7 +21,9 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
   const sortedItems = [...data.items].sort((a, b) => {
     if (columnId === 'plan') {
       if (a.priority !== b.priority) {
-        return a.priority - b.priority;
+        const aPriority = typeof a.priority === 'string' ? parseInt(a.priority) : a.priority;
+        const bPriority = typeof b.priority === 'string' ? parseInt(b.priority) : b.priority;
+        return aPriority - bPriority;
       }
       return a.taskQuality.localeCompare(b.taskQuality);
     }
@@ -48,10 +51,16 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
     }
 
     // Priority bonus
-    if (item.priority === 1) {
+    const priority = typeof item.priority === 'string' ? parseInt(item.priority) : item.priority;
+    if (priority <= 3) {
       basePoints += 3;
-    } else if (item.priority === 2) {
+    } else if (priority <= 6) {
       basePoints += 1;
+    }
+
+    // Plan bonus
+    if (item.columnOrigin === 'plan') {
+      basePoints += 2;
     }
 
     // Time multiplier
@@ -64,7 +73,10 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
     return sortedItems.reduce((total, item) => total + (item.xpValue || 0), 0);
   };
 
-  const isHighPriority = (priority: number) => priority === 1 || priority === 2;
+  const isHighPriority = (priority: string | number) => {
+    const priorityNum = typeof priority === 'string' ? parseInt(priority) : priority;
+    return priorityNum <= 3;
+  };
 
   const handleItemClick = (item: ColumnItem) => {
     if (columnId === 'plan') {
@@ -156,7 +168,7 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
               className={`column-item ${item.completed ? 'completed' : ''} 
                 ${columnId === 'plan' && index === 0 ? 'top-priority' : ''}
                 ${columnId === 'fact' && item.timeQuality === 'pure' ? 'pure-time' : ''}
-                ${columnId === 'fact' && (item.priority === 1 || item.priority === 2) ? 'high-priority' : ''}`}
+                ${columnId === 'fact' && isHighPriority(item.priority) ? 'high-priority' : ''}`}
               onClick={() => handleItemClick(item)}
             >
               <div className="item-block">
@@ -172,7 +184,7 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
               <div className="item-block">
                 {columnId === 'plan' ? (
                   <div className="item-details">
-                    <span>{item.estimatedMinutes}m - {item.timeType}</span>
+                    <span>{item.estimatedMinutes}m</span>
                   </div>
                 ) : (
                   <div className="item-details">
@@ -208,6 +220,7 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
           initialData={editingItem}
           onConfirm={handleEditConfirm}
           onCancel={() => setEditingItem(null)}
+          selectedDate={selectedDate}
         />
       )}
       {showXPCalculation && columnId === 'fact' && (
