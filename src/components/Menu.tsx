@@ -45,9 +45,6 @@ const Menu: React.FC<MenuProps> = ({
           >
             Statistics
           </button>
-          <button className="menu-item" onClick={onNewDay}>
-            Start New Day
-          </button>
           <button className="menu-item danger" onClick={onClearData}>
             Clear All Data
           </button>

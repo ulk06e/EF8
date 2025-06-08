@@ -104,6 +104,20 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
     }, 0);
   };
 
+  const getButtonColorClass = (date: Date, estimatedMinutes: number) => {
+    if (isPastDay(date) || isSameDay(date, today)) {
+      return '';
+    }
+
+    if (estimatedMinutes < 240) {
+      return 'low-minutes';
+    } else if (estimatedMinutes <= 480) {
+      return 'medium-minutes';
+    } else {
+      return 'high-minutes';
+    }
+  };
+
   return (
     <div className="week-container">
       <div className="column-header">
@@ -126,12 +140,13 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
         {weekDates.map((date) => {
           const estimatedMinutes = getEstimatedMinutesForDate(date);
           const isPast = isPastDay(date);
+          const colorClass = getButtonColorClass(date, estimatedMinutes);
           return (
             <div key={date.toISOString()} className="week-day-container">
               <button
                 className={`week-day-button ${
                   isSameDay(date, selectedDate) ? 'selected' : ''
-                } ${isSameDay(date, today) ? 'current' : ''}`}
+                } ${isSameDay(date, today) ? 'current' : ''} ${colorClass}`}
                 onClick={() => onDateSelect(date)}
               >
                 <div className="day-name">{formatDayName(date)}</div>

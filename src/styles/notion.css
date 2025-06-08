@@ -373,7 +373,7 @@ body {
 }
 
 .column-item.pure-time {
-  background-color: transparent;
+  background-color: rgba(46, 204, 113, 0.1);
 }
 
 .column-item.high-priority {
@@ -1714,4 +1714,40 @@ textarea.full-width {
   border: 1px solid var(--notion-border);
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.week-day-button.low-minutes {
+  background-color: rgba(231, 76, 60, 0.1);
+}
+
+.week-day-button.medium-minutes {
+  background-color: rgba(241, 196, 15, 0.1);
+}
+
+.week-day-button.high-minutes {
+  background-color: rgba(46, 204, 113, 0.1);
+}
+
+.week-day-button.low-minutes:hover {
+  background-color: rgba(231, 76, 60, 0.15);
+}
+
+.week-day-button.medium-minutes:hover {
+  background-color: rgba(241, 196, 15, 0.15);
+}
+
+.week-day-button.high-minutes:hover {
+  background-color: rgba(46, 204, 113, 0.15);
+}
+
+.week-day-button.selected.low-minutes {
+  border-color: rgba(231, 76, 60, 0.5);
+}
+
+.week-day-button.selected.medium-minutes {
+  border-color: rgba(241, 196, 15, 0.5);
+}
+
+.week-day-button.selected.high-minutes {
+  border-color: rgba(46, 204, 113, 0.5);
 } 

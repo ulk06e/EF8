@@ -63,7 +63,7 @@ export const calculateXP = (
     xp *= getAccuracyMultiplier(actualDuration, estimatedDuration);
   }
 
-  return Math.floor(xp);
+  return Math.floor(xp) +5;
 }; 
 
 

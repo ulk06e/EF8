@@ -237,7 +237,17 @@ function App() {
       currentLevel: 1,
       taskIds: []
     };
-    const updatedProjects = [...projects, newProject];
+
+    // Get all projects except 'other-projects'
+    const regularProjects = projects.filter(p => p.id !== 'other-projects');
+    const otherProject = projects.find(p => p.id === 'other-projects');
+
+    // Add new project before 'other-projects'
+    const updatedProjects = [...regularProjects, newProject];
+    if (otherProject) {
+      updatedProjects.push(otherProject);
+    }
+
     setProjects(updatedProjects);
     storage.saveProjects(updatedProjects);
   };
