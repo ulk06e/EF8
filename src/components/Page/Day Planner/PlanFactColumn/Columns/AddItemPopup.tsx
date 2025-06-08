@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { TimeType, TaskQuality, AddItemFormData, ColumnItem } from '../types/index';
-import '../styles/notion.css';
+import { TimeType, TaskQuality, AddItemFormData, ColumnItem } from '../../../../../types';
+import '../../../../../styles/notion.css';
 
 interface AddItemPopupProps {
   onConfirm: (data: AddItemFormData) => void;

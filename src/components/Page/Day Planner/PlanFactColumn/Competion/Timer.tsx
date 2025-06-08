@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ColumnItem } from '../types';
-import '../styles/notion.css';
+import { ColumnItem } from '../../../../../types';
+import '../../../../../styles/notion.css';
 
 interface TimerProps {
   item: ColumnItem;

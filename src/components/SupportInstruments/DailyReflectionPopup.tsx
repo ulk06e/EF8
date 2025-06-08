@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../styles/notion.css';
+import '../../styles/notion.css';
 
 interface DailyReflectionPopupProps {
   onConfirm: (reflection: string) => void;

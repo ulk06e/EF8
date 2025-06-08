@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/notion.css';
+import '../../../styles/notion.css';
 
 interface MenuProps {
   isOpen: boolean;

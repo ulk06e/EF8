@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { StorageData, DayData } from '../types/storage';
-import { ColumnItem } from '../types';
-import '../styles/notion.css';
+import { StorageData, DayData } from '../../../types/storage';
+import { ColumnItem } from '../../../types';
+import '../../../styles/notion.css';
 
 interface StatisticsProps {
   data: StorageData;

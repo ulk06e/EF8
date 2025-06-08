@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import storage from '../services/storage';
-import '../styles/notion.css';
+import storage from '../../../../services/storage';
+import '../../../../styles/notion.css';
 
 interface WeekColumnProps {
   selectedDate: Date;

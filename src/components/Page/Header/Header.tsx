@@ -1,6 +1,6 @@
 import React from 'react';
-import { Stats } from '../types';
-import '../styles/notion.css';
+import { Stats } from '../../../types';
+import '../../../styles/notion.css';
 
 interface HeaderProps {
   stats: Stats;

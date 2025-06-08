@@ -1,7 +1,7 @@
 import React from 'react';
-import { ColumnItem } from '../types';
-import { calculateXP } from '../utils/xp';
-import '../styles/notion.css';
+import { ColumnItem } from '../../../../../types';
+import { calculateXP } from '../../../../../utils/xp';
+import '../../../../../styles/notion.css';
 
 interface XPCalculationPopupProps {
   item: ColumnItem;

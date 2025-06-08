@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Project } from '../types/index';
-import '../styles/notion.css';
+import { Project } from '../../../../types';
+import '../../../../styles/notion.css';
 
 interface ProjectsProps {
   onAddProject: (name: string) => void;

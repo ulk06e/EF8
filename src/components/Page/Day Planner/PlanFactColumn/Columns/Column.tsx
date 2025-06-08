@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Column as ColumnType, ColumnItem, AddItemFormData } from '../types';
+import { Column as ColumnType, ColumnItem, AddItemFormData } from '../../../../../types';
 import XPCalculationPopup from './XPCalculationPopup';
 import AddItemPopup from './AddItemPopup';
-import '../styles/notion.css';
-import { calculateXP } from '../utils/xp';
+import '../../../../../styles/notion.css';
+import { calculateXP } from '../../../../../utils/xp';
 
 
 interface ColumnProps {
