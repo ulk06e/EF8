@@ -45,7 +45,7 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
         <h3>XP Calculation</h3>
         <div className="xp-breakdown">
           <div className="xp-row">
-            <span>Base XP (1 per 20min)</span>
+            <span>Base XP (1 per 10min)</span>
             <span>{baseXP}</span>
           </div>
           
