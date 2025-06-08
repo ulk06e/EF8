@@ -1,5 +1,6 @@
 import { StorageData, DayData, Records } from '../types/storage';
 import { ColumnItem, Stats, AddItemFormData, Project } from '../types/index';
+import { calculateXP } from '../utils/xp';
 
 const STORAGE_KEY = 'plan_tracker_data';
 const DAY_START_HOUR = 4;
@@ -297,13 +298,14 @@ class StorageService {
       date: item.date,
       timeType: item.timeType,
       projectId: item.projectId || 'all-projects',
-      xpValue: this.calculateXP(
+      xpValue: calculateXP(
         item.taskQuality,
         item.timeQuality || 'not-pure',
-        item.priority,
+        typeof item.priority === 'string' ? parseInt(item.priority) : item.priority,
         item.columnOrigin,
         actualDuration,
-        Number(item.estimatedMinutes)
+        Number(item.estimatedMinutes),
+        false
       )
     };
     
@@ -503,47 +505,6 @@ class StorageService {
       item.id === processedItem.id ? processedItem : item
     );
     this.saveData();
-  }
-
-  private calculateXP(
-    taskQuality: string,
-    timeQuality: string,
-    priority: number,
-    columnOrigin: string,
-    actualDuration: number,
-    estimatedMinutes: number
-  ): number {
-    let basePoints = 0;
-    
-    // Task quality points
-    switch (taskQuality) {
-      case 'A': basePoints = 8; break;
-      case 'B': basePoints = 4; break;
-      case 'C': basePoints = 2; break;
-      case 'D': basePoints = 1; break;
-    }
-
-    // Pure time bonus
-    if (timeQuality === 'pure') {
-      basePoints += 3;
-    }
-
-    // Priority bonus
-    if (priority <= 3) {
-      basePoints += 3;
-    } else if (priority <= 6) {
-      basePoints += 1;
-    }
-
-    // Plan bonus
-    if (columnOrigin === 'plan') {
-      basePoints += 2;
-    }
-
-    // Time multiplier
-    const timeMultiplier = Math.floor(1 + actualDuration / 60);
-    
-    return basePoints * timeMultiplier;
   }
 
   public getProjects(): Project[] {

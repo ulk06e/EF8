@@ -3,6 +3,8 @@ import { Column as ColumnType, ColumnItem, AddItemFormData } from '../types';
 import XPCalculationPopup from './XPCalculationPopup';
 import AddItemPopup from './AddItemPopup';
 import '../styles/notion.css';
+import { calculateXP } from '../utils/xp';
+
 
 interface ColumnProps {
   data: ColumnType;
@@ -43,41 +45,6 @@ const Column: React.FC<ColumnProps> = ({
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const calculateXP = (item: ColumnItem): number => {
-    let basePoints = 0;
-    
-    // Task quality points
-    switch (item.taskQuality) {
-      case 'A': basePoints = 8; break;
-      case 'B': basePoints = 4; break;
-      case 'C': basePoints = 2; break;
-      case 'D': basePoints = 1; break;
-    }
-
-    // Pure time bonus
-    if (item.timeQuality === 'pure') {
-      basePoints += 3;
-    }
-
-    // Priority bonus
-    const priority = typeof item.priority === 'string' ? parseInt(item.priority) : item.priority;
-    if (priority <= 3) {
-      basePoints += 3;
-    } else if (priority <= 6) {
-      basePoints += 1;
-    }
-
-    // Plan bonus
-    if (item.columnOrigin === 'plan') {
-      basePoints += 2;
-    }
-
-    // Time multiplier
-    const timeMultiplier = Math.floor(1 + (item.actualDuration || 0) / 60);
-    
-    return basePoints * timeMultiplier;
   };
 
   const getTotalXP = () => {

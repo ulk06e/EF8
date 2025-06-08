@@ -1,5 +1,6 @@
 import React from 'react';
 import { ColumnItem } from '../types';
+import { calculateXP } from '../utils/xp';
 import '../styles/notion.css';
 
 interface XPCalculationPopupProps {
@@ -8,18 +9,35 @@ interface XPCalculationPopupProps {
 }
 
 const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }) => {
-  const baseXP = Math.floor(item.actualDuration! / 20);
-  const qualityMultiplier = { A: 4, B: 3, C: 2, D: 1 }[item.taskQuality];
-  const timeQualityMultiplier = item.timeQuality === 'pure' ? 1.5 : 1;
-  const priorityMultiplier = { 1: 1.5, 2: 1.4, 3: 1.3, 7: 1.5, 8: 1.4, 9: 1.3, 10: 1.2 }[item.priority] || 1;
-  const prePlannedMultiplier = item.wasPrePlanned ? 1.3 : 1;
-  
-  const estimatedMinutes = typeof item.estimatedMinutes === 'string' 
-    ? parseInt(item.estimatedMinutes) 
-    : item.estimatedMinutes;
-  
-  const durationRatio = item.actualDuration! / estimatedMinutes;
-  const accuracyMultiplier = (durationRatio > 1.2 || durationRatio < 0.5) ? 0.7 : 1;
+  // Calculate XP using the centralized function
+  const xp = calculateXP(
+    item.taskQuality,
+    item.timeQuality || 'not-pure',
+    typeof item.priority === 'string' ? parseInt(item.priority) : item.priority,
+    item.columnOrigin,
+    item.actualDuration || 0,
+    Number(item.estimatedMinutes),
+    false // removed pre-planned bonus
+  );
+
+  // Base XP calculation (1 point per 20 minutes)
+  const baseXP = Math.floor((item.actualDuration || 0) / 20);
+
+  // Helper function to determine quality multiplier class
+  const getQualityClass = (quality: string) => {
+    switch (quality) {
+      case 'A': return 'multiplier-max';
+      case 'B': return 'multiplier-partial';
+      default: return 'multiplier-none';
+    }
+  };
+
+  // Helper function to determine priority multiplier class
+  const getPriorityClass = (priority: number) => {
+    if (priority === 1) return 'multiplier-max';
+    if (priority === 2 || priority === 3) return 'multiplier-partial';
+    return 'multiplier-none';
+  };
 
   return (
     <div className="popup-overlay" onClick={onClose}>
@@ -31,45 +49,41 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
             <span>{baseXP}</span>
           </div>
           
-          <div className={`xp-row multiplier-${qualityMultiplier === 4 ? 'max' : qualityMultiplier >= 2 ? 'partial' : 'none'}`}>
+          {/* Quality multiplier - always shown */}
+          <div className={`xp-row ${getQualityClass(item.taskQuality)}`}>
             <span>Quality ({item.taskQuality})</span>
-            <span>×{qualityMultiplier}</span>
+            <span>×{item.taskQuality === 'A' ? '4' : item.taskQuality === 'B' ? '3' : item.taskQuality === 'C' ? '2' : '1'}</span>
           </div>
 
-          {item.timeQuality === 'pure' && (
-            <div className="xp-row multiplier-max">
-              <span>Pure Time Bonus</span>
-              <span>×1.5</span>
-            </div>
-          )}
+          {/* Pure Time multiplier - always shown */}
+          <div className={`xp-row ${item.timeQuality === 'pure' ? 'multiplier-max' : 'multiplier-none'}`}>
+            <span>Pure Time Bonus</span>
+            <span>×{item.timeQuality === 'pure' ? '1.5' : '1'}</span>
+          </div>
 
-          {(item.priority <= 3 || item.priority >= 7) && (
-            <div className="xp-row multiplier-partial">
-              <span>Priority #{item.priority}</span>
-              <span>×{priorityMultiplier}</span>
-            </div>
-          )}
+          {/* Priority multiplier - always shown */}
+          <div className={`xp-row ${getPriorityClass(typeof item.priority === 'string' ? parseInt(item.priority) : item.priority)}`}>
+            <span>Priority #{item.priority}</span>
+            <span>×{item.priority === 1 ? '1.5' : item.priority === 2 ? '1.4' : item.priority === 3 ? '1.3' : '1'}</span>
+          </div>
 
-          {item.wasPrePlanned && (
-            <div className="xp-row multiplier-max">
-              <span>Pre-planned Bonus</span>
-              <span>×1.3</span>
-            </div>
-          )}
-
-          {accuracyMultiplier < 1 && (
-            <div className="xp-row multiplier-none">
-              <span>Accuracy Penalty</span>
-              <span>×0.7</span>
-            </div>
-          )}
+          {/* Accuracy multiplier - always shown */}
+          <div className={`xp-row ${
+            !(item.actualDuration && item.estimatedMinutes && 
+              (item.actualDuration / Number(item.estimatedMinutes) > 1.2 || 
+               item.actualDuration / Number(item.estimatedMinutes) < 0.5)) ? 'multiplier-max' : 'multiplier-none'
+          }`}>
+            <span>Accuracy Multiplier</span>
+            <span>×{(item.actualDuration && item.estimatedMinutes && 
+                   (item.actualDuration / Number(item.estimatedMinutes) > 1.2 || 
+                    item.actualDuration / Number(item.estimatedMinutes) < 0.5)) ? '0.7' : '1'}</span>
+          </div>
 
           <div className="xp-total">
             <span>Total XP</span>
-            <span>{item.xpValue}</span>
+            <span>{xp}</span>
           </div>
         </div>
-
       </div>
     </div>
   );
