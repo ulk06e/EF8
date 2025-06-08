@@ -42,7 +42,7 @@ export const calculateXP = (
   wasPrePlanned: boolean
 ): number => {
   // Base XP: 1 point per 20 minutes
-  let xp = Math.floor(actualDuration / 20);
+  let xp = Math.floor(actualDuration / 10);
 
   // Quality multiplier
   const qualityMultiplier = QUALITY_MULTIPLIER[taskQuality];

@@ -20,8 +20,8 @@ const XPCalculationPopup: React.FC<XPCalculationPopupProps> = ({ item, onClose }
     false // removed pre-planned bonus
   );
 
-  // Base XP calculation (1 point per 20 minutes)
-  const baseXP = Math.floor((item.actualDuration || 0) / 20);
+  // Base XP calculation (1 point per 10 minutes)
+  const baseXP = Math.floor((item.actualDuration || 0) / 10);
 
   // Helper function to determine quality multiplier class
   const getQualityClass = (quality: string) => {
