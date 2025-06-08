@@ -33,40 +33,50 @@ const getAccuracyMultiplier = (actualDuration: number, estimatedMinutes: number)
 };
 
 export const calculateXP = (
-  taskQuality: TaskQuality,
-  timeQuality: TimeQuality,
+  taskQuality: string,
+  timeQuality: string,
   priority: number,
   columnOrigin: string,
   actualDuration: number,
-  estimatedDuration: number,
-  wasPrePlanned: boolean
+  estimatedMinutes: number,
+  hasReflection: boolean = false
 ): number => {
-  // Base XP: 1 point per 20 minutes
-  let xp = Math.floor(actualDuration / 20);
+  let basePoints = 0;
+  
+  // Task quality points
+  switch (taskQuality) {
+    case 'A': basePoints = 8; break;
+    case 'B': basePoints = 4; break;
+    case 'C': basePoints = 2; break;
+    case 'D': basePoints = 1; break;
+  }
 
-  // Quality multiplier
-  const qualityMultiplier = QUALITY_MULTIPLIER[taskQuality];
-  xp *= qualityMultiplier;
-
-  // Time quality multiplier
+  // Pure time bonus
   if (timeQuality === 'pure') {
-    xp *= TIME_QUALITY_MULTIPLIER;
+    basePoints += 3;
   }
 
-  // Priority multiplier
-  const priorityMultiplier = PRIORITY_MULTIPLIER[priority] || 1;
-  xp *= priorityMultiplier;
-
-  // Pre-planned bonus
-  if (wasPrePlanned) {
-    xp *= 1.3;
+  // Priority bonus
+  if (priority <= 3) {
+    basePoints += 3;
+  } else if (priority <= 6) {
+    basePoints += 1;
   }
 
-  // Accuracy penalty
-  const durationRatio = actualDuration / estimatedDuration;
-  if (durationRatio > 1.2 || durationRatio < 0.5) {
-    xp *= getAccuracyMultiplier(actualDuration, estimatedDuration);
+  // Plan bonus
+  if (columnOrigin === 'plan') {
+    basePoints += 2;
   }
 
-  return Math.floor(xp);
+  // Time multiplier
+  const timeMultiplier = Math.floor(1 + actualDuration / 60);
+  
+  return basePoints * timeMultiplier;
+};
+
+export const calculateNextLevelXP = (level: number): number => {
+  if (level <= 5) {
+    return level * 100;
+  }
+  return 500 + (level - 5) * 10;
 }; 

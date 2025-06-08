@@ -11,7 +11,7 @@ import Statistics from './components/Statistics';
 import WeekColumn from './components/WeekColumn';
 import Projects from './components/Projects';
 import { Stats, Column as ColumnType, AddItemFormData, ColumnItem, Project } from './types';
-import { calculateXP } from './utils/xp';
+import { calculateXP, calculateNextLevelXP } from './utils/xp';
 import storage from './services/storage';
 import './styles/notion.css';
 
@@ -42,73 +42,25 @@ function App() {
   const [showReflection, setShowReflection] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [projects, setProjects] = useState<Project[]>([]);
-
-  // Subscribe to storage changes
-  useEffect(() => {
-    // Initial load
-    const data = storage.getData();
-    setStats({
-      currentXP: data.totalXP,
-      nextLevelXP: data.nextLevelXP,
-      currentLevel: data.currentLevel,
-      todayXP: data.currentDay.stats.dayXP,
-      bestDayXP: data.records.highestDayXP,
-      todayMinutes: data.currentDay.stats.dayMinutes,
-      bestMinutes: data.records.mostWorkTimeInDay,
-      todayPureMinutes: data.currentDay.stats.dayPureMinutes,
-      bestPureMinutes: data.records.mostPureTimeInDay,
-      streak: data.streak,
-      planAdherence: data.currentDay.stats.planAdherence,
-    });
-
-    setColumns({
-      plan: {
-        title: 'Plan',
-        items: data.currentDay.planItems,
-      },
-      fact: {
-        title: 'Fact',
-        items: data.currentDay.factItems,
-      },
-    });
-
-    // Check if we should show reflection
-    if (storage.shouldShowReflection()) {
-      setShowReflection(true);
+  const [projects, setProjects] = useState<Project[]>([
+    {
+      id: 'all-projects',
+      name: 'All Projects',
+      currentXP: 0,
+      nextLevelXP: 100,
+      currentLevel: 1,
+      taskIds: []
+    },
+    {
+      id: 'other-projects',
+      name: 'Other Projects',
+      currentXP: 0,
+      nextLevelXP: 100,
+      currentLevel: 1,
+      taskIds: []
     }
-
-    // Subscribe to future changes
-    const unsubscribe = storage.subscribe(() => {
-      const updatedData = storage.getData();
-      setStats({
-        currentXP: updatedData.totalXP,
-        nextLevelXP: updatedData.nextLevelXP,
-        currentLevel: updatedData.currentLevel,
-        todayXP: updatedData.currentDay.stats.dayXP,
-        bestDayXP: updatedData.records.highestDayXP,
-        todayMinutes: updatedData.currentDay.stats.dayMinutes,
-        bestMinutes: updatedData.records.mostWorkTimeInDay,
-        todayPureMinutes: updatedData.currentDay.stats.dayPureMinutes,
-        bestPureMinutes: updatedData.records.mostPureTimeInDay,
-        streak: updatedData.streak,
-        planAdherence: updatedData.currentDay.stats.planAdherence,
-      });
-
-      setColumns({
-        plan: {
-          title: 'Plan',
-          items: updatedData.currentDay.planItems,
-        },
-        fact: {
-          title: 'Fact',
-          items: updatedData.currentDay.factItems,
-        },
-      });
-    });
-
-    return () => unsubscribe();
-  }, []);
+  ]);
+  const [selectedProjectId, setSelectedProjectId] = useState('all-projects');
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -119,7 +71,10 @@ function App() {
   };
 
   const handleAddClick = () => {
-    console.log('handleAddClick called');
+    if (selectedProjectId === 'all-projects') {
+      alert('Please select a specific project before adding a task.');
+      return;
+    }
     setShowAddPopup(true);
   };
 
@@ -133,6 +88,7 @@ function App() {
       xpValue: 0,
       createdTime: new Date(),
       date: selectedDate,
+      projectId: selectedProjectId
     };
 
     storage.addPlanItem(newItem);
@@ -274,15 +230,189 @@ function App() {
 
   const handleAddProject = (name: string) => {
     const newProject: Project = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name,
       currentXP: 0,
       nextLevelXP: 100,
       currentLevel: 1,
       taskIds: []
     };
-    setProjects(prev => [...prev, newProject]);
+    const updatedProjects = [...projects, newProject];
+    setProjects(updatedProjects);
+    storage.saveProjects(updatedProjects);
   };
+
+  const handleDeleteProject = (projectId: string) => {
+    const updatedProjects = projects.filter(p => p.id !== projectId);
+    setProjects(updatedProjects);
+    storage.saveProjects(updatedProjects);
+    if (selectedProjectId === projectId) {
+      setSelectedProjectId('all-projects');
+    }
+  };
+
+  const handleProjectSelect = (projectId: string) => {
+    setSelectedProjectId(projectId);
+  };
+
+  const filterItemsByProject = (items: ColumnItem[]) => {
+    if (selectedProjectId === 'all-projects') {
+      return items.filter(item => item.projectId !== 'all-projects');
+    }
+    return items.filter(item => item.projectId === selectedProjectId);
+  };
+
+  const updateProjectXP = (factItems: ColumnItem[]) => {
+    const projectXP = new Map<string, number>();
+    let totalXP = 0;
+    
+    factItems.forEach(item => {
+      if (item.projectId && item.projectId !== 'all-projects') {
+        const xp = item.xpValue || 0;
+        projectXP.set(
+          item.projectId, 
+          (projectXP.get(item.projectId) || 0) + xp
+        );
+        totalXP += xp;
+      }
+    });
+
+    setProjects(prev => prev.map(project => {
+      if (project.id === 'all-projects') {
+        return {
+          ...project,
+          currentXP: totalXP,
+          nextLevelXP: calculateNextLevelXP(Math.floor(totalXP / 100) + 1),
+          currentLevel: Math.floor(totalXP / 100) + 1
+        };
+      }
+
+      const xp = projectXP.get(project.id) || 0;
+      let currentLevel = 1;
+      let nextLevelXP = 100;
+      let currentXP = xp;
+
+      // Calculate level based on XP
+      while (currentXP >= nextLevelXP) {
+        currentLevel++;
+        currentXP -= nextLevelXP;
+        nextLevelXP = calculateNextLevelXP(currentLevel);
+      }
+
+      return {
+        ...project,
+        currentXP: currentXP,
+        nextLevelXP: nextLevelXP,
+        currentLevel: currentLevel
+      };
+    }));
+  };
+
+  // Subscribe to storage changes
+  useEffect(() => {
+    // Initial load
+    const data = storage.getData();
+    setStats({
+      currentXP: data.totalXP,
+      nextLevelXP: data.nextLevelXP,
+      currentLevel: data.currentLevel,
+      todayXP: data.currentDay.stats.dayXP,
+      bestDayXP: data.records.highestDayXP,
+      todayMinutes: data.currentDay.stats.dayMinutes,
+      bestMinutes: data.records.mostWorkTimeInDay,
+      todayPureMinutes: data.currentDay.stats.dayPureMinutes,
+      bestPureMinutes: data.records.mostPureTimeInDay,
+      streak: data.streak,
+      planAdherence: data.currentDay.stats.planAdherence,
+    });
+
+    setColumns({
+      plan: {
+        title: 'Plan',
+        items: filterItemsByProject(data.currentDay.planItems),
+      },
+      fact: {
+        title: 'Fact',
+        items: filterItemsByProject(data.currentDay.factItems),
+      },
+    });
+
+    updateProjectXP(data.currentDay.factItems);
+
+    // Check if we should show reflection
+    if (storage.shouldShowReflection()) {
+      setShowReflection(true);
+    }
+
+    // Subscribe to future changes
+    const unsubscribe = storage.subscribe(() => {
+      const updatedData = storage.getData();
+      setStats({
+        currentXP: updatedData.totalXP,
+        nextLevelXP: updatedData.nextLevelXP,
+        currentLevel: updatedData.currentLevel,
+        todayXP: updatedData.currentDay.stats.dayXP,
+        bestDayXP: updatedData.records.highestDayXP,
+        todayMinutes: updatedData.currentDay.stats.dayMinutes,
+        bestMinutes: updatedData.records.mostWorkTimeInDay,
+        todayPureMinutes: updatedData.currentDay.stats.dayPureMinutes,
+        bestPureMinutes: updatedData.records.mostPureTimeInDay,
+        streak: updatedData.streak,
+        planAdherence: updatedData.currentDay.stats.planAdherence,
+      });
+
+      setColumns({
+        plan: {
+          title: 'Plan',
+          items: filterItemsByProject(updatedData.currentDay.planItems),
+        },
+        fact: {
+          title: 'Fact',
+          items: filterItemsByProject(updatedData.currentDay.factItems),
+        },
+      });
+
+      updateProjectXP(updatedData.currentDay.factItems);
+    });
+
+    return () => unsubscribe();
+  }, [selectedProjectId]);
+
+  useEffect(() => {
+    const savedProjects = storage.getProjects();
+    if (savedProjects && savedProjects.length > 0) {
+      // Ensure default projects exist
+      const hasAllProjects = savedProjects.some(p => p.id === 'all-projects');
+      const hasOtherProjects = savedProjects.some(p => p.id === 'other-projects');
+      
+      let updatedProjects = [...savedProjects];
+      
+      if (!hasAllProjects) {
+        updatedProjects.unshift({
+          id: 'all-projects',
+          name: 'All Projects',
+          currentXP: 0,
+          nextLevelXP: 100,
+          currentLevel: 1,
+          taskIds: []
+        });
+      }
+      
+      if (!hasOtherProjects) {
+        updatedProjects.push({
+          id: 'other-projects',
+          name: 'Other Projects',
+          currentXP: 0,
+          nextLevelXP: 100,
+          currentLevel: 1,
+          taskIds: []
+        });
+      }
+      
+      setProjects(updatedProjects);
+      storage.saveProjects(updatedProjects);
+    }
+  }, []);
 
   return (
     <div className="container">
@@ -302,7 +432,13 @@ function App() {
       ) : (
         <>
           <Dashboard stats={stats} />
-          <Projects onAddProject={handleAddProject} />
+          <Projects 
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            onAddProject={handleAddProject}
+            onDeleteProject={handleDeleteProject}
+            onProjectSelect={handleProjectSelect}
+          />
           <div className="columns-container">
             <Column 
               data={filteredColumns.plan} 
@@ -312,12 +448,14 @@ function App() {
               onItemEdit={handleItemEdit}
               columnId="plan"
               selectedDate={selectedDate}
+              selectedProjectId={selectedProjectId}
             />
             <Column 
               data={filteredColumns.fact} 
               onItemToggle={() => {}}
               columnId="fact"
               selectedDate={selectedDate}
+              selectedProjectId={selectedProjectId}
             />
           </div>
           <WeekColumn
@@ -332,6 +470,7 @@ function App() {
           onConfirm={handlePopupConfirm}
           onCancel={() => setShowAddPopup(false)}
           selectedDate={selectedDate}
+          selectedProjectId={selectedProjectId}
         />
       )}
       {activeTimer && (

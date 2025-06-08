@@ -7,9 +7,16 @@ interface AddItemPopupProps {
   onCancel: () => void;
   initialData?: ColumnItem;
   selectedDate: Date;
+  selectedProjectId: string;
 }
 
-const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initialData, selectedDate }) => {
+const AddItemPopup: React.FC<AddItemPopupProps> = ({ 
+  onConfirm, 
+  onCancel, 
+  initialData, 
+  selectedDate,
+  selectedProjectId 
+}) => {
   const [formData, setFormData] = useState<AddItemFormData>({
     description: initialData?.description || '',
     timeType: initialData?.timeType || 'to-goal',
@@ -17,7 +24,10 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initia
     estimatedMinutes: initialData?.estimatedMinutes || '',
     priority: initialData?.priority || 3,
     date: selectedDate,
+    projectId: selectedProjectId
   });
+
+  const [showProjectWarning, setShowProjectWarning] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -28,6 +38,7 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initia
         estimatedMinutes: initialData.estimatedMinutes,
         priority: initialData.priority,
         date: initialData.date,
+        projectId: initialData.projectId
       });
     }
   }, [initialData]);
@@ -35,17 +46,25 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initia
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
-      date: selectedDate
+      date: selectedDate,
+      projectId: selectedProjectId
     }));
-  }, [selectedDate]);
+  }, [selectedDate, selectedProjectId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (selectedProjectId === 'all-projects') {
+      setShowProjectWarning(true);
+      return;
+    }
+
     onConfirm({
       ...formData,
       estimatedMinutes: parseInt(formData.estimatedMinutes.toString()) || 0,
       priority: typeof formData.priority === 'string' ? parseInt(formData.priority) : formData.priority,
-      date: selectedDate
+      date: selectedDate,
+      projectId: selectedProjectId
     });
   };
 
@@ -65,6 +84,13 @@ const AddItemPopup: React.FC<AddItemPopupProps> = ({ onConfirm, onCancel, initia
         <h2 className="popup-title">
           {initialData ? 'Edit Task' : 'Create a Task'} for {formatDate(selectedDate)}
         </h2>
+
+        {showProjectWarning && (
+          <div className="project-warning">
+            Please select a specific project before creating a task.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <textarea

@@ -29,6 +29,7 @@ export interface ColumnItem extends AddItemFormData {
   wasPrePlanned?: boolean;
   plannedDate?: Date;
   date: Date;
+  projectId: string;
 }
 
 export interface Column {
@@ -43,6 +44,7 @@ export interface AddItemFormData {
   estimatedMinutes: string | number;
   priority: number;
   date: Date;
+  projectId?: string;
 }
 
 export interface DayStats {

@@ -2,18 +2,29 @@ import React, { useState } from 'react';
 import { Column as ColumnType, ColumnItem, AddItemFormData } from '../types';
 import XPCalculationPopup from './XPCalculationPopup';
 import AddItemPopup from './AddItemPopup';
+import '../styles/notion.css';
 
 interface ColumnProps {
   data: ColumnType;
-  onItemToggle: (id: string) => void;
+  onItemToggle: (itemId: string) => void;
   onAddClick?: () => void;
-  columnId: string;
   onItemClick?: (item: ColumnItem) => void;
   onItemEdit?: (item: ColumnItem, formData: AddItemFormData) => void;
+  columnId: string;
   selectedDate: Date;
+  selectedProjectId: string;
 }
 
-const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnId, onItemClick, onItemEdit, selectedDate }) => {
+const Column: React.FC<ColumnProps> = ({
+  data,
+  onItemToggle,
+  onAddClick,
+  onItemClick,
+  onItemEdit,
+  columnId,
+  selectedDate,
+  selectedProjectId
+}) => {
   const [selectedItem, setSelectedItem] = useState<ColumnItem | null>(null);
   const [showXPCalculation, setShowXPCalculation] = useState<ColumnItem | null>(null);
   const [editingItem, setEditingItem] = useState<ColumnItem | null>(null);
@@ -100,18 +111,14 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
     }
   };
 
-  const handleEditClick = () => {
-    if (selectedItem && columnId === 'plan') {
-      setEditingItem(selectedItem);
-      setSelectedItem(null);
-    }
+  const handleEditClick = (item: ColumnItem) => {
+    setEditingItem(item);
   };
 
   const handleEditConfirm = (formData: AddItemFormData) => {
-    if (editingItem && onItemEdit && columnId === 'plan') {
+    if (editingItem && onItemEdit) {
       onItemEdit(editingItem, formData);
       setEditingItem(null);
-      setSelectedItem(null);
     }
   };
 
@@ -141,12 +148,28 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
     return unaccountedMinutes > 0 ? unaccountedMinutes : null;
   };
 
+  const isPastDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  };
+
+  const canAddOrEditTasks = !isPastDate(selectedDate);
+
   return (
     <div className="column">
       <div className="column-header">
         <h2>{data.title}</h2>
-        {columnId === 'plan' && onAddClick && (
-          <button onClick={onAddClick} className="add-button">Add</button>
+        {onAddClick && columnId === 'plan' && (
+          <button 
+            onClick={onAddClick} 
+            className={`add-button ${!canAddOrEditTasks ? 'disabled' : ''}`}
+            disabled={!canAddOrEditTasks}
+          >
+            Add Item
+          </button>
         )}
         {columnId === 'fact' && (
           <button className="xp-display">{getTotalXP()} XP</button>
@@ -205,7 +228,7 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
               <button className="delete-action" onClick={handleDeleteClick}>
                 Delete
               </button>
-              <button className="edit-action" onClick={handleEditClick}>
+              <button className="edit-action" onClick={() => handleEditClick(selectedItem)}>
                 Edit
               </button>
               <button className="start-action" onClick={handleStartClick}>
@@ -215,12 +238,13 @@ const Column: React.FC<ColumnProps> = ({ data, onItemToggle, onAddClick, columnI
           </div>
         </div>
       )}
-      {editingItem && columnId === 'plan' && (
+      {editingItem && columnId === 'plan' && canAddOrEditTasks && (
         <AddItemPopup
           initialData={editingItem}
           onConfirm={handleEditConfirm}
           onCancel={() => setEditingItem(null)}
           selectedDate={selectedDate}
+          selectedProjectId={selectedProjectId}
         />
       )}
       {showXPCalculation && columnId === 'fact' && (

@@ -4,31 +4,21 @@ import '../styles/notion.css';
 
 interface ProjectsProps {
   onAddProject: (name: string) => void;
+  onDeleteProject?: (id: string) => void;
+  onProjectSelect?: (id: string) => void;
+  projects: Project[];
+  selectedProjectId: string;
 }
 
-const Projects: React.FC<ProjectsProps> = ({ onAddProject }) => {
+const Projects: React.FC<ProjectsProps> = ({ 
+  onAddProject, 
+  onDeleteProject, 
+  onProjectSelect,
+  projects,
+  selectedProjectId 
+}) => {
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
-
-  // Default projects
-  const defaultProjects: Project[] = [
-    {
-      id: 'all-projects',
-      name: 'All Projects',
-      currentXP: 150,
-      nextLevelXP: 200,
-      currentLevel: 2,
-      taskIds: []
-    },
-    {
-      id: 'other-projects',
-      name: 'Other Projects',
-      currentXP: 75,
-      nextLevelXP: 100,
-      currentLevel: 1,
-      taskIds: []
-    }
-  ];
 
   const handleAddClick = () => {
     setShowAddPopup(true);
@@ -42,9 +32,44 @@ const Projects: React.FC<ProjectsProps> = ({ onAddProject }) => {
     }
   };
 
+  const handleProjectClick = (projectId: string) => {
+    if (onProjectSelect) {
+      onProjectSelect(projectId);
+    }
+  };
+
+  const handleProjectDoubleClick = (projectId: string) => {
+    if (projectId === 'all-projects' || projectId === 'other-projects') return; // Prevent deletion of default projects
+    
+    if (onDeleteProject && window.confirm('Are you sure you want to delete this project?')) {
+      onDeleteProject(projectId);
+    }
+  };
+
   const calculateProgress = (current: number, next: number) => {
     return (current / next) * 100;
   };
+
+  const sortProjects = (projectsList: Project[]) => {
+    const allProjects = projectsList.find(p => p.id === 'all-projects');
+    const otherProjects = projectsList.find(p => p.id === 'other-projects');
+    const regularProjects = projectsList.filter(p => 
+      p.id !== 'all-projects' && p.id !== 'other-projects'
+    ).sort((a, b) => {
+      if (a.currentLevel !== b.currentLevel) {
+        return b.currentLevel - a.currentLevel;
+      }
+      return b.currentXP - a.currentXP;
+    });
+
+    return [
+      ...(allProjects ? [allProjects] : []),
+      ...regularProjects,
+      ...(otherProjects ? [otherProjects] : [])
+    ];
+  };
+
+  const sortedProjects = sortProjects(projects);
 
   return (
     <div className="dashboard">
@@ -54,8 +79,15 @@ const Projects: React.FC<ProjectsProps> = ({ onAddProject }) => {
       </div>
 
       <div className="projects-list">
-        {defaultProjects.map((project) => (
-          <div key={project.id} className="column-item">
+        {sortedProjects.map((project) => (
+          <div 
+            key={project.id} 
+            className={`column-item ${project.id === selectedProjectId ? 'selected-project' : ''} ${
+              project.id === 'all-projects' ? 'all-projects' : ''
+            }`}
+            onClick={() => handleProjectClick(project.id)}
+            onDoubleClick={() => handleProjectDoubleClick(project.id)}
+          >
             <div className="project-header">
               <div className="project-name">{project.name}</div>
               <div className="project-level">Level {project.currentLevel}</div>

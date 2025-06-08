@@ -1,5 +1,5 @@
 import { StorageData, DayData, Records } from '../types/storage';
-import { ColumnItem, Stats, AddItemFormData } from '../types/index';
+import { ColumnItem, Stats, AddItemFormData, Project } from '../types/index';
 
 const STORAGE_KEY = 'plan_tracker_data';
 const DAY_START_HOUR = 4;
@@ -266,6 +266,7 @@ class StorageService {
       createdTime: new Date(),
       date: new Date(item.date),
       timeType: item.timeType,
+      projectId: item.projectId || 'all-projects',
       estimatedMinutes: typeof item.estimatedMinutes === 'string' 
         ? parseInt(item.estimatedMinutes) 
         : item.estimatedMinutes
@@ -295,6 +296,7 @@ class StorageService {
       createdTime: new Date(),
       date: item.date,
       timeType: item.timeType,
+      projectId: item.projectId || 'all-projects',
       xpValue: this.calculateXP(
         item.taskQuality,
         item.timeQuality || 'not-pure',
@@ -542,6 +544,85 @@ class StorageService {
     const timeMultiplier = Math.floor(1 + actualDuration / 60);
     
     return basePoints * timeMultiplier;
+  }
+
+  public getProjects(): Project[] {
+    const projectsJson = localStorage.getItem('projects');
+    const defaultProjects = [
+      {
+        id: 'all-projects',
+        name: 'All Projects',
+        currentXP: 0,
+        nextLevelXP: 100,
+        currentLevel: 1,
+        taskIds: []
+      },
+      {
+        id: 'other-projects',
+        name: 'Other Projects',
+        currentXP: 0,
+        nextLevelXP: 100,
+        currentLevel: 1,
+        taskIds: []
+      }
+    ];
+
+    if (!projectsJson) {
+      return defaultProjects;
+    }
+
+    const savedProjects = JSON.parse(projectsJson);
+    const hasAllProjects = savedProjects.some((p: Project) => p.id === 'all-projects');
+    const hasOtherProjects = savedProjects.some((p: Project) => p.id === 'other-projects');
+
+    if (!hasAllProjects || !hasOtherProjects) {
+      const updatedProjects = [...savedProjects];
+      
+      if (!hasAllProjects) {
+        updatedProjects.unshift(defaultProjects[0]);
+      }
+      
+      if (!hasOtherProjects) {
+        updatedProjects.push(defaultProjects[1]);
+      }
+      
+      this.saveProjects(updatedProjects);
+      return updatedProjects;
+    }
+
+    return savedProjects;
+  }
+
+  public saveProjects(projects: Project[]): void {
+    // Ensure default projects cannot be removed
+    const hasAllProjects = projects.some(p => p.id === 'all-projects');
+    const hasOtherProjects = projects.some(p => p.id === 'other-projects');
+    
+    let updatedProjects = [...projects];
+    
+    if (!hasAllProjects) {
+      updatedProjects.unshift({
+        id: 'all-projects',
+        name: 'All Projects',
+        currentXP: 0,
+        nextLevelXP: 100,
+        currentLevel: 1,
+        taskIds: []
+      });
+    }
+    
+    if (!hasOtherProjects) {
+      updatedProjects.push({
+        id: 'other-projects',
+        name: 'Other Projects',
+        currentXP: 0,
+        nextLevelXP: 100,
+        currentLevel: 1,
+        taskIds: []
+      });
+    }
+    
+    localStorage.setItem('projects', JSON.stringify(updatedProjects));
   }
 }
 
