@@ -67,13 +67,20 @@ body {
   margin: 24px 0;
   padding: 20px;
   border: 1px solid var(--notion-border);
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard h2 {
   margin: 0 0 16px 0;
   font-size: 20px;
   font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #eee;
+}
+
+.dashboard-line {
+    border-bottom: 2px solid #eee;
 }
 
 .stats-grid {
@@ -84,24 +91,43 @@ body {
 
 .stat-item {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 8px;
   padding: 12px 0;
-  border-bottom: 1px solid var(--notion-border);
+  border: 1px solid var(--notion-border);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  background-color: transparent;
   font-size: 15px;
 }
 
 .stat-label {
   font-weight: 500;
+  color: var(--notion-text);
+}
+
+.stat-value-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .stat-value {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--notion-text);
+}
+
+.stat-best {
+  font-size: 14px;
+  color: var(--notion-gray);
 }
 
 .streak-value {
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--notion-text);
 }
 
 .columns-container {
@@ -113,8 +139,9 @@ body {
 
 .column {
   border: 1px solid var(--notion-border);
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .column-header {
@@ -137,7 +164,7 @@ body {
   background: var(--notion-text);
   color: white;
   border: none;
-  border-radius: 3px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
 }
@@ -164,6 +191,9 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .column-item:hover {
@@ -177,25 +207,21 @@ body {
 }
 
 .item-block {
-  padding: 8px 0;
-}
-
-.item-block + .item-block {
-  border-top: 1px solid #eee;
-  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .item-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 4px;
-  margin-bottom: 4px;
 }
 
 .item-name {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -217,9 +243,11 @@ body {
 .item-description {
   font-weight: normal;
   font-size: 15px;
+  color: var(--notion-text);
   flex: 1;
   min-width: 0;
-  word-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-details {
@@ -345,7 +373,7 @@ body {
 }
 
 .column-item.pure-time {
-  background-color: rgba(68, 194, 68, 0.1);
+  background-color: transparent;
 }
 
 .column-item.high-priority {
@@ -1296,7 +1324,8 @@ textarea.full-width {
   font-size: 15px;
   flex: 1;
   min-width: 0;
-  word-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .day-details-popup .item-details {
@@ -1441,6 +1470,9 @@ textarea.full-width {
 
 .week-column {
   margin-top: 24px;
+  border: 1px solid var(--notion-border);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .week-navigation {
@@ -1489,7 +1521,7 @@ textarea.full-width {
   text-align: center;
   background: var(--notion-hover);
   border: 1px solid var(--notion-border);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
   color: var(--notion-text);
@@ -1557,7 +1589,7 @@ textarea.full-width {
   padding: 20px;
   background: var(--background-primary);
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .goals-content {
@@ -1597,6 +1629,7 @@ textarea.full-width {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  border-bottom: none;
 }
 
 .project-name {
@@ -1652,7 +1685,7 @@ textarea.full-width {
 }
 
 .all-projects {
-  border-radius: 25px;
+  /* border: black 1px solid; */
 }
 
 .project-warning {
@@ -1663,4 +1696,22 @@ textarea.full-width {
   margin-bottom: 16px;
   font-size: 14px;
   text-align: center;
+}
+
+/* Week Column styles */
+.week-container {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid var(--notion-border);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Projects Container styles */
+.projects-container {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid var(--notion-border);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 } 

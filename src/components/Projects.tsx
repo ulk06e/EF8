@@ -72,7 +72,7 @@ const Projects: React.FC<ProjectsProps> = ({
   const sortedProjects = sortProjects(projects);
 
   return (
-    <div className="dashboard">
+    <div className="projects-container">
       <div className="column-header">
         <h2>Projects</h2>
         <button onClick={handleAddClick} className="add-button">Add Project</button>

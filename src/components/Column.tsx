@@ -148,6 +148,14 @@ const Column: React.FC<ColumnProps> = ({
     return unaccountedMinutes > 0 ? unaccountedMinutes : null;
   };
 
+  const isFutureDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate > today;
+  };
+
   const isPastDate = (date: Date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -231,9 +239,11 @@ const Column: React.FC<ColumnProps> = ({
               <button className="edit-action" onClick={() => handleEditClick(selectedItem)}>
                 Edit
               </button>
-              <button className="start-action" onClick={handleStartClick}>
-                Start
-              </button>
+              {!isFutureDate(selectedDate) && (
+                <button className="start-action" onClick={handleStartClick}>
+                  Start
+                </button>
+              )}
             </div>
           </div>
         </div>

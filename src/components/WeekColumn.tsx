@@ -85,16 +85,22 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
 
     if (!dayData) return 0;
 
-    return dayData.planItems.reduce((total, item) => {
-      const minutes = typeof item.estimatedMinutes === 'string'
-        ? parseInt(item.estimatedMinutes)
-        : item.estimatedMinutes;
-      return total + minutes;
+    // Calculate estimated minutes for the specific day
+    const estimatedMinutes = dayData.planItems.reduce((total, item) => {
+      if (isSameDay(new Date(item.date), date)) {
+        const minutes = typeof item.estimatedMinutes === 'string'
+          ? parseInt(item.estimatedMinutes)
+          : item.estimatedMinutes;
+        return total + minutes;
+      }
+      return total;
     }, 0);
+
+    return estimatedMinutes;
   };
 
   return (
-    <div className="dashboard week-column">
+    <div className="week-container">
       <div className="column-header">
         <div className="week-navigation">
           <button onClick={handlePreviousWeek} className="week-nav-button">
