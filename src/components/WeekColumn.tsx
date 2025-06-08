@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import storage from '../services/storage';
 import '../styles/notion.css';
 
 interface WeekColumnProps {
@@ -31,6 +32,7 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
 
   const weekDates = getWeekDates();
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { 
@@ -56,6 +58,12 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
            date1.getFullYear() === date2.getFullYear();
   };
 
+  const isPastDay = (date: Date) => {
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  };
+
   const handlePreviousWeek = () => {
     setWeekOffset(prev => prev - 1);
   };
@@ -67,6 +75,22 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
   const handleTodayClick = () => {
     setWeekOffset(0);
     onTodayClick();
+  };
+
+  const getEstimatedMinutesForDate = (date: Date) => {
+    const data = storage.getData();
+    const dayData = isSameDay(date, new Date())
+      ? data.currentDay
+      : data.days.find(d => isSameDay(new Date(d.date), date));
+
+    if (!dayData) return 0;
+
+    return dayData.planItems.reduce((total, item) => {
+      const minutes = typeof item.estimatedMinutes === 'string'
+        ? parseInt(item.estimatedMinutes)
+        : item.estimatedMinutes;
+      return total + minutes;
+    }, 0);
   };
 
   return (
@@ -88,18 +112,28 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
         <button onClick={handleTodayClick} className="add-button">Today</button>
       </div>
       <div className="week-days">
-        {weekDates.map((date) => (
-          <button
-            key={date.toISOString()}
-            className={`week-day-button ${
-              isSameDay(date, selectedDate) ? 'selected' : ''
-            } ${isSameDay(date, today) ? 'current' : ''}`}
-            onClick={() => onDateSelect(date)}
-          >
-            <div className="day-name">{formatDayName(date)}</div>
-            <div className="day-date">{formatDate(date)}</div>
-          </button>
-        ))}
+        {weekDates.map((date) => {
+          const estimatedMinutes = getEstimatedMinutesForDate(date);
+          const isPast = isPastDay(date);
+          return (
+            <div key={date.toISOString()} className="week-day-container">
+              <button
+                className={`week-day-button ${
+                  isSameDay(date, selectedDate) ? 'selected' : ''
+                } ${isSameDay(date, today) ? 'current' : ''}`}
+                onClick={() => onDateSelect(date)}
+              >
+                <div className="day-name">{formatDayName(date)}</div>
+                <div className="day-date">{formatDate(date)}</div>
+              </button>
+              {!isPast && (
+                <div className="unaccounted-minutes">
+                  {estimatedMinutes}m planned
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
