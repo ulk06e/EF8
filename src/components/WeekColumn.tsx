@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import storage from '../services/storage';
 import '../styles/notion.css';
 
@@ -14,6 +14,17 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
   onTodayClick,
 }) => {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [storageData, setStorageData] = useState(storage.getData());
+
+  useEffect(() => {
+    // Subscribe to storage changes
+    const unsubscribe = storage.subscribe(() => {
+      setStorageData(storage.getData());
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   const getWeekDates = () => {
     const today = new Date();
@@ -78,15 +89,11 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
   };
 
   const getEstimatedMinutesForDate = (date: Date) => {
-    const data = storage.getData();
-    const dayData = isSameDay(date, new Date())
-      ? data.currentDay
-      : data.days.find(d => isSameDay(new Date(d.date), date));
-
-    if (!dayData) return 0;
-
-    // Calculate estimated minutes for the specific day
-    const estimatedMinutes = dayData.planItems.reduce((total, item) => {
+    // Get all plan items from current day data
+    const allPlanItems = storageData.currentDay.planItems;
+    
+    // Sum up estimated minutes for items matching the target date
+    return allPlanItems.reduce((total, item) => {
       if (isSameDay(new Date(item.date), date)) {
         const minutes = typeof item.estimatedMinutes === 'string'
           ? parseInt(item.estimatedMinutes)
@@ -95,8 +102,6 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
       }
       return total;
     }, 0);
-
-    return estimatedMinutes;
   };
 
   return (
@@ -132,7 +137,7 @@ const WeekColumn: React.FC<WeekColumnProps> = ({
                 <div className="day-name">{formatDayName(date)}</div>
                 <div className="day-date">{formatDate(date)}</div>
               </button>
-              {!isPast && (
+              {(
                 <div className="unaccounted-minutes">
                   {estimatedMinutes}m planned
                 </div>
